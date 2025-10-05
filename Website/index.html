@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>IOT Dashboard</title>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+</head>
+
+<body>
+    <h1>IOT Dashboard</h1>
+    <h2>Sensors</h2>
+    <p><strong>Temperature:</strong><span id="tem-value">--</span></p>
+    <p><strong>Humidity:</strong><span id="hum-value">--</span></p>
+    <p><strong>Light:</strong><span id="light-value">--</span></p>
+    <hr>
+    <h2>Controls</h2>
+    <p>
+        <strong>LED 1:</strong>
+        <button id="led1-on-btn">Turn On Led 1</button>
+        <button id="led1-off-btn">Turn Off Led 1</button>
+    </p>
+    <p>
+        <strong>LED 2:</strong>
+        <button id="led2-on-btn">Turn On Led 1</button>
+        <button id="led2-off-btn">Turn Off Led 1</button>
+    </p>
+    <p>
+        <strong>LED 3:</strong>
+        <button id="led3-on-btn">Turn On Led 1</button>
+        <button id="led3-off-btn">Turn Off Led 1</button>
+    </p>
+    <p>
+        <strong>ALL LED</strong>
+        <button id="led1-on-btn">Turn On Led 1</button>
+        <button id="led1-off-btn">Turn Off Led 1</button>
+    </p>
+
+    <script>
+        const brokerUrl = 'ws://172.20.10.2:9001';
+        const options = {
+            username: 'vui',
+            password: '1234'
+        };
+
+        console.log('Connecting to MQTT Broker...');
+        const client = mqtt.connect(brokerUrl, options);
+        client.on('connect', function () {
+            console.log('Successfully connected to MQTT Broker!');
+        });
+    </script>
+</body>
+
+</html>
