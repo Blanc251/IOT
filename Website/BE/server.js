@@ -1,40 +1,31 @@
 import express from 'express';
 import mqtt from 'mqtt';
 import cors from 'cors';
+import mysql from 'mysql2/promise';
 
-/* --- Server Setup --- */
 const app = express();
 const port = 3001;
 app.use(cors());
 app.use(express.json());
 
-/* --- In-memory Data Storage --- */
-let latestSensorData = {};
-let latestLedStatus = {};
-/* An array is added to store historical sensor data. */
-let historicalData = [];
+const dbConfig = {
+    host: '127.0.0.1',
+    user: 'root',
+    password: '123456',
+    database: 'iot_dashboard'
+};
 
-/*
-  A function is defined to generate mock historical data.
-  This ensures the UI is populated on first load.
-*/
-function generateMockData() {
-    for (let i = 124; i > 0; i--) {
-        const timestamp = new Date(Date.now() - i * 5 * 60000);
-        const dateStr = `${timestamp.getDate().toString().padStart(2, '0')}/${(timestamp.getMonth() + 1).toString().padStart(2, '0')}/${timestamp.getFullYear()}`;
-        const timeStr = `${timestamp.getHours().toString().padStart(2, '0')}:${timestamp.getMinutes().toString().padStart(2, '0')}`;
-        historicalData.push({
-            id: 18625 + (124 - i),
-            temperature: (25 + Math.random() * 2).toFixed(1),
-            humidity: Math.floor(35 + Math.random() * 20),
-            light: Math.floor(800 + Math.random() * 400),
-            time: `${dateStr} ${timeStr}`
-        });
+let db;
+(async function connectToDb() {
+    try {
+        db = await mysql.createConnection(dbConfig);
+        console.log('Connected to MySQL database!');
+    } catch (error) {
+        console.error('Database connection failed:', error);
+        process.exit(1);
     }
-}
-generateMockData();
+})();
 
-/* --- MQTT Client Setup --- */
 const mqttBrokerUrl = 'mqtt://172.20.10.2:1883';
 const client = mqtt.connect(mqttBrokerUrl, {
     username: 'vui',
@@ -45,44 +36,57 @@ const SENSOR_TOPIC = "iot/sensor/data";
 const COMMAND_TOPIC = "iot/led/control";
 const STATUS_TOPIC = "iot/led/status";
 
+// 1. Add a variable to store the current LED status
+let currentLedStatus = { led1: 'off', led2: 'off', led3: 'off' };
+
 client.on('connect', () => {
-    console.log('✅ Connected to MQTT Broker!');
+    console.log('Connected to MQTT Broker!');
     client.subscribe([SENSOR_TOPIC, STATUS_TOPIC], (err) => {
         if (!err) {
-            console.log(`📡 Subscribed to topics: ${SENSOR_TOPIC} & ${STATUS_TOPIC}`);
+            console.log(`Subscribed to topics: ${SENSOR_TOPIC} & ${STATUS_TOPIC}`);
         }
     });
 });
 
-client.on('message', (topic, message) => {
+client.on('message', async (topic, message) => {
     const data = JSON.parse(message.toString());
+
     if (topic === SENSOR_TOPIC) {
         console.log('Received sensor data:', data);
-        latestSensorData = data;
-
-        /* New sensor data is added to the beginning of the history array. */
-        const now = new Date();
-        const dateStr = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
-        const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-        const newRecord = {
-            id: 18625 + historicalData.length,
-            ...data,
-            time: `${dateStr} ${timeStr}`
-        };
-        historicalData.unshift(newRecord);
+        try {
+            const sql = 'INSERT INTO sensor_readings (temperature, humidity, light) VALUES (?, ?, ?)';
+            await db.query(sql, [data.temperature, data.humidity, data.light]);
+            console.log('Sensor data saved to database.');
+        } catch (error) {
+            console.error('Failed to save sensor data:', error);
+        }
     }
+
+    // 2. Update the status when a message is received from the device
     if (topic === STATUS_TOPIC) {
         console.log('Received LED status:', data);
-        latestLedStatus = data;
+        if (data && data.led && (data.status === 'on' || data.status === 'off')) {
+            if (currentLedStatus.hasOwnProperty(data.led)) {
+                currentLedStatus[data.led] = data.status;
+                console.log(`Updated server state: ${data.led} is now ${data.status}`);
+            }
+        }
     }
 });
 
-/* --- API Endpoints --- */
-app.get('/api/data', (req, res) => {
-    res.json({
-        sensors: latestSensorData,
-        leds: latestLedStatus
-    });
+app.get('/api/data', async (req, res) => {
+    try {
+        const [sensorRows] = await db.query('SELECT * FROM sensor_readings ORDER BY created_at DESC LIMIT 1');
+
+        // 3. Send the REAL currentLedStatus to the front-end
+        res.json({
+            sensors: sensorRows[0] || {},
+            leds: currentLedStatus
+        });
+    } catch (error) {
+        console.error('API Error fetching data:', error);
+        res.status(500).json({ error: 'Failed to fetch data' });
+    }
 });
 
 app.post('/api/command', (req, res) => {
@@ -95,31 +99,29 @@ app.post('/api/command', (req, res) => {
             console.error('Failed to publish command:', err);
             return res.status(500).send('Failed to send command');
         }
-        console.log(`✅ Command sent to ${COMMAND_TOPIC}:`, command);
+        console.log(`Command sent to ${COMMAND_TOPIC}:`, command);
         res.status(200).send('Command sent successfully');
     });
 });
 
-/* A new GET endpoint is added for fetching historical data with pagination. */
-app.get('/api/data/history', (req, res) => {
-    const page = parseInt(req.query.page || 1);
-    const limit = 10;
+app.get('/api/data/history', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page || 1);
+        const limit = 10;
+        const offset = (page - 1) * limit;
 
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
+        const [[{ totalItems }]] = await db.query('SELECT COUNT(*) as totalItems FROM sensor_readings');
+        const totalPages = Math.ceil(totalItems / limit);
 
-    const results = {
-        totalItems: historicalData.length,
-        totalPages: Math.ceil(historicalData.length / limit),
-        currentPage: page,
-        data: historicalData.slice(startIndex, endIndex)
-    };
+        const [data] = await db.query('SELECT * FROM sensor_readings ORDER BY created_at DESC LIMIT ? OFFSET ?', [limit, offset]);
 
-    res.json(results);
+        res.json({ totalItems, totalPages, currentPage: page, data });
+    } catch (error) {
+        console.error('API Error fetching history:', error);
+        res.status(500).json({ error: 'Failed to fetch history' });
+    }
 });
 
-
-/* --- Start the Server --- */
 app.listen(port, () => {
-    console.log(`🚀 Backend server running at http://localhost:${port}`);
+    console.log(`Backend server running at http://localhost:${port}`);
 });

@@ -32,41 +32,38 @@ ChartJS.register(
 
 const API_URL = 'http://localhost:3001/api';
 
-const chartLabels = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'];
-
-const chartData = {
-    tempHumidity: {
-        labels: chartLabels,
-        datasets: [
-            {
-                label: 'Temp (°C)',
-                data: [26, 28, 30, 29, 28, 27, 26],
-                borderColor: 'rgba(255, 99, 132, 1)',
-                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                tension: 0.4,
-                fill: true,
-            },
-            {
-                label: 'Humidity (%)',
-                data: [60, 58, 62, 65, 68, 70, 72],
-                borderColor: 'rgba(54, 162, 235, 1)',
-                backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                tension: 0.4,
-                fill: true,
-            },
-        ],
-    },
-    light: {
-        labels: chartLabels,
-        datasets: [{
-            label: 'Light (nits)',
-            data: [75, 95, 100, 90, 70, 40, 20],
-            borderColor: 'rgba(255, 206, 86, 1)',
-            backgroundColor: 'rgba(255, 206, 86, 0.2)',
+const initialChartData = {
+    labels: [],
+    datasets: [
+        {
+            label: 'Temp (°C)',
+            data: [],
+            borderColor: 'rgba(255, 99, 132, 1)',
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
             tension: 0.4,
             fill: true,
-        }]
-    }
+        },
+        {
+            label: 'Humidity (%)',
+            data: [],
+            borderColor: 'rgba(54, 162, 235, 1)',
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            tension: 0.4,
+            fill: true,
+        },
+    ],
+};
+
+const initialLightChartData = {
+    labels: [],
+    datasets: [{
+        label: 'Light (nits)',
+        data: [],
+        borderColor: 'rgba(255, 206, 86, 1)',
+        backgroundColor: 'rgba(255, 206, 86, 0.2)',
+        tension: 0.4,
+        fill: true,
+    }]
 };
 
 const chartOptions = {
@@ -79,12 +76,43 @@ const chartOptions = {
 function Dashboard() {
     const [sensorData, setSensorData] = useState({ temperature: 0, humidity: 0, light: 0 });
     const [ledStatus, setLedStatus] = useState({ led1: 'off', led2: 'off', led3: 'off' });
+    const [tempHumidityData, setTempHumidityData] = useState(initialChartData);
+    const [lightData, setLightData] = useState(initialLightChartData);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 const response = await axios.get(`${API_URL}/data`);
-                if (response.data.sensors) setSensorData(response.data.sensors);
+                if (response.data.sensors) {
+                    const { temperature, humidity, light } = response.data.sensors;
+                    setSensorData({ temperature, humidity, light });
+
+                    const newLabel = new Date().toLocaleTimeString();
+
+                    setTempHumidityData(prevData => {
+                        const labels = [...prevData.labels, newLabel].slice(-10);
+                        const newTempData = [...prevData.datasets[0].data, temperature].slice(-10);
+                        const newHumidityData = [...prevData.datasets[1].data, humidity].slice(-10);
+                        return {
+                            ...prevData,
+                            labels,
+                            datasets: [
+                                { ...prevData.datasets[0], data: newTempData },
+                                { ...prevData.datasets[1], data: newHumidityData },
+                            ]
+                        };
+                    });
+
+                    setLightData(prevData => {
+                        const labels = [...prevData.labels, newLabel].slice(-10);
+                        const newLightData = [...prevData.datasets[0].data, light].slice(-10);
+                        return {
+                            ...prevData,
+                            labels,
+                            datasets: [{ ...prevData.datasets[0], data: newLightData }]
+                        };
+                    });
+                }
                 if (response.data.leds) setLedStatus(response.data.leds);
             } catch (error) {
                 console.error("Error fetching data:", error);
@@ -96,6 +124,21 @@ function Dashboard() {
     }, []);
 
     const sendCommand = async (command) => {
+        setLedStatus(prevStatus => {
+            const newStatus = { ...prevStatus };
+            if (command.startsWith('all')) {
+                const state = command === 'allon' ? 'on' : 'off';
+                return { led1: state, led2: state, led3: state };
+            } else {
+                const ledName = command.slice(0, 4);
+                const state = command.slice(4);
+                if (newStatus.hasOwnProperty(ledName)) {
+                    newStatus[ledName] = state;
+                }
+                return newStatus;
+            }
+        });
+
         try {
             await axios.post(`${API_URL}/command`, { command });
         } catch (error) {
@@ -138,13 +181,13 @@ function Dashboard() {
                 <div className={styles.chartCard}>
                     <h3>Nhiệt độ & Độ ẩm</h3>
                     <div className={styles.chartWrapper}>
-                        <Line options={chartOptions} data={chartData.tempHumidity} />
+                        <Line options={chartOptions} data={tempHumidityData} />
                     </div>
                 </div>
                 <div className={styles.chartCard}>
                     <h3>Ánh sáng</h3>
                     <div className={styles.chartWrapper}>
-                        <Line options={chartOptions} data={chartData.light} />
+                        <Line options={chartOptions} data={lightData} />
                     </div>
                 </div>
             </div>
