@@ -176,9 +176,8 @@ body {
 /* --- Row 2: Charts Styling --- */
 .charts-container {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: var(--main-spacing);
-  /* UPDATED */
   flex-grow: 1;
   min-height: 0;
 }
