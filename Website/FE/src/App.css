@@ -1,0 +1,312 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+/* --- CSS Variables & Global Styles --- */
+:root {
+  --bg-color: #f4f7fe;
+  --card-bg-color: #ffffff;
+  --primary-color: #0d6efd;
+  --text-color: #343a40;
+  --secondary-text-color: #6c757d;
+  --border-color: #e9ecef;
+  --shadow-color: rgba(0, 0, 0, 0.05);
+  --green: #28a745;
+  --yellow: #ffc107;
+  --cyan: #17a2b8;
+  --red: #dc3545;
+
+  /* ADDED: A single variable for consistent spacing */
+  --main-spacing: 24px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+/* --- Main Layout --- */
+.app-container {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.main-content {
+  flex-grow: 1;
+  padding: var(--main-spacing);
+  /* UPDATED */
+  display: flex;
+  flex-direction: column;
+  /* gap: var(--main-spacing); */
+  /* This is removed */
+}
+
+/* --- Sidebar --- */
+.sidebar {
+  width: 250px;
+  background-color: var(--card-bg-color);
+  height: 100vh;
+  padding: 20px;
+  border-right: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.sidebar-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.sidebar-header h3 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+.sidebar-menu {
+  list-style: none;
+}
+
+.sidebar-menu a {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 12px 15px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--secondary-text-color);
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.sidebar-menu a.active,
+.sidebar-menu a:hover {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.sidebar-menu a svg {
+  font-size: 20px;
+}
+
+/* --- Dashboard Content --- */
+.dashboard-content-wrapper {
+  /* ADDED: This new rule makes the wrapper a flex container */
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--main-spacing);
+  min-height: 0;
+  /* Prevents overflow issues */
+}
+
+.dashboard-content-wrapper h1 {
+  font-size: 26px;
+  font-weight: 600;
+}
+
+/* --- Row 1: Summary Cards Styling --- */
+.summary-cards-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--main-spacing);
+  /* UPDATED */
+  flex-shrink: 0;
+}
+
+.summary-card {
+  background-color: var(--card-bg-color);
+  padding: 16px;
+  /* Adjusted for balance */
+  border-radius: 12px;
+  box-shadow: 0 4px 20px var(--shadow-color);
+}
+
+.summary-card .card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--secondary-text-color);
+  margin-bottom: 10px;
+}
+
+.summary-card .card-icon {
+  font-size: 22px;
+}
+
+.summary-card h3 {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.summary-card h2 {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-top: 4px;
+  margin-bottom: 8px;
+}
+
+.status-badge {
+  font-size: 0.8rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: 500;
+  color: white;
+}
+
+.status-badge.normal {
+  background-color: var(--green);
+}
+
+.status-badge.high {
+  background-color: var(--yellow);
+  color: var(--text-color);
+}
+
+.status-badge.bright {
+  background-color: var(--cyan);
+}
+
+/* --- Row 2: Charts Styling --- */
+.charts-container {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--main-spacing);
+  /* UPDATED */
+  flex-grow: 1;
+  min-height: 0;
+}
+
+.chart-card {
+  background-color: var(--card-bg-color);
+  padding: 16px;
+  /* Adjusted for balance */
+  border-radius: 12px;
+  box-shadow: 0 4px 20px var(--shadow-color);
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-card h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.chart-wrapper {
+  flex-grow: 1;
+  position: relative;
+  min-height: 0;
+}
+
+/* --- Row 3: Device Controls Styling --- */
+.controls-card {
+  flex-shrink: 0;
+  padding: 16px 20px;
+  /* Adjusted for balance */
+  background-color: var(--card-bg-color);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px var(--shadow-color);
+}
+
+.controls-card h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.device-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.device-item:last-of-type {
+  border-bottom: none;
+}
+
+.device-item span {
+  font-weight: 500;
+}
+
+/* --- Reusable Toggle Switch --- */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 28px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 28px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked+.slider {
+  background-color: var(--primary-color);
+}
+
+input:checked+.slider:before {
+  transform: translateX(22px);
+}
+
+.all-controls {
+  padding-top: 15px;
+  border-top: 1px solid var(--border-color);
+  margin-top: 15px;
+  display: flex;
+  gap: 10px;
+}
+
+.all-controls button {
+  flex-grow: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  color: white;
+  transition: background-color 0.2s;
+}
+
+.all-controls button:first-of-type {
+  background-color: var(--primary-color);
+}
+
+.all-controls button:last-of-type {
+  background-color: var(--red);
+}
