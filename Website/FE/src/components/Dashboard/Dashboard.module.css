@@ -1,0 +1,48 @@
+.dashboardContentWrapper {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--main-spacing);
+    min-height: 0;
+}
+
+.dashboardContentWrapper h1 {
+    font-size: 26px;
+    font-weight: 600;
+}
+
+.summaryCardsContainer {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--main-spacing);
+    flex-shrink: 0;
+}
+
+.chartsContainer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--main-spacing);
+    flex-grow: 1;
+    min-height: 0;
+}
+
+.chartCard {
+    background-color: var(--card-bg-color);
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px var(--shadow-color);
+    display: flex;
+    flex-direction: column;
+}
+
+.chartCard h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.chartWrapper {
+    flex-grow: 1;
+    position: relative;
+    min-height: 0;
+}

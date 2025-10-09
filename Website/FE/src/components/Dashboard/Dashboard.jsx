@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import SummaryCard from './SummaryCard';
-import DeviceControls from './DeviceControls';
+import SummaryCard from '../SummaryCard/SummaryCard';
+import DeviceControls from '../DeviceControl/DeviceControls';
 
-// --- Import Chart.js elements ---
 import { Line } from 'react-chartjs-2';
 import {
     Chart as ChartJS,
@@ -14,13 +13,12 @@ import {
     Title,
     Tooltip,
     Legend,
-    Filler, // Import Filler for gradient backgrounds
+    Filler,
 } from 'chart.js';
 
-// --- Import Icons ---
 import { BsThermometerHalf, BsDropletHalf, BsSun } from 'react-icons/bs';
+import styles from './Dashboard.module.css';
 
-// --- IMPORTANT: Register the components you will use ---
 ChartJS.register(
     CategoryScale,
     LinearScale,
@@ -34,8 +32,6 @@ ChartJS.register(
 
 const API_URL = 'http://localhost:3001/api';
 
-// --- Chart Data & Options (Static for this example) ---
-// In a real application, you would fetch this historical data from your backend
 const chartLabels = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'];
 
 const chartData = {
@@ -80,13 +76,11 @@ const chartOptions = {
     scales: { y: { beginAtZero: true } },
 };
 
-
 function Dashboard() {
     const [sensorData, setSensorData] = useState({ temperature: 0, humidity: 0, light: 0 });
     const [ledStatus, setLedStatus] = useState({ led1: 'off', led2: 'off', led3: 'off' });
 
     useEffect(() => {
-        // ... (your existing useEffect data fetching logic remains the same)
         const fetchData = async () => {
             try {
                 const response = await axios.get(`${API_URL}/data`);
@@ -102,7 +96,6 @@ function Dashboard() {
     }, []);
 
     const sendCommand = async (command) => {
-        // ... (your existing sendCommand logic remains the same)
         try {
             await axios.post(`${API_URL}/command`, { command });
         } catch (error) {
@@ -111,11 +104,10 @@ function Dashboard() {
     };
 
     return (
-        <div className="dashboard-content-wrapper">
+        <div className={styles.dashboardContentWrapper}>
             <h1>Dashboard</h1>
 
-            {/* --- Row 1: Summary Cards --- */}
-            <div className="summary-cards-container">
+            <div className={styles.summaryCardsContainer}>
                 <SummaryCard
                     icon={<BsThermometerHalf />}
                     title="Nhiệt độ"
@@ -142,29 +134,23 @@ function Dashboard() {
                 />
             </div>
 
-            {/* --- Row 2: Charts --- */}
-            <div className="charts-container">
-                <div className="chart-card">
+            <div className={styles.chartsContainer}>
+                <div className={styles.chartCard}>
                     <h3>Nhiệt độ & Độ ẩm</h3>
-                    <div className="chart-wrapper">
+                    <div className={styles.chartWrapper}>
                         <Line options={chartOptions} data={chartData.tempHumidity} />
                     </div>
                 </div>
-
-                <div className="chart-card">
+                <div className={styles.chartCard}>
                     <h3>Ánh sáng</h3>
-                    <div className="chart-wrapper">
+                    <div className={styles.chartWrapper}>
                         <Line options={chartOptions} data={chartData.light} />
                     </div>
                 </div>
             </div>
 
-
-            {/* --- Row 3: Device Controls --- */}
             <DeviceControls ledStatus={ledStatus} sendCommand={sendCommand} />
-
         </div>
     );
 }
-
 export default Dashboard;

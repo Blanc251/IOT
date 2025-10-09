@@ -1,4 +1,5 @@
 import React from 'react';
+import styles from './DeviceControl.module.css';
 
 function DeviceControls({ ledStatus, sendCommand }) {
 
@@ -9,33 +10,32 @@ function DeviceControls({ ledStatus, sendCommand }) {
     };
 
     return (
-        <div className="controls-card">
+        <div className={styles.controlsCard}>
             <h3>Thiết bị</h3>
-            <div className="device-list">
-                <div className="device-item">
+            <div className={styles.deviceList}>
+                <div className={styles.deviceItem}>
                     <span>Quạt (LED 1)</span>
-                    <label className="switch">
+                    <label className={styles.switch}>
                         <input type="checkbox" checked={ledStatus.led1 === 'on'} onChange={() => handleToggle('led1')} />
-                        <span className="slider"></span>
+                        <span className={styles.slider}></span>
                     </label>
                 </div>
-                <div className="device-item">
+                <div className={styles.deviceItem}>
                     <span>Điều hòa (LED 2)</span>
-                    <label className="switch">
+                    <label className={styles.switch}>
                         <input type="checkbox" checked={ledStatus.led2 === 'on'} onChange={() => handleToggle('led2')} />
-                        <span className="slider"></span>
+                        <span className={styles.slider}></span>
                     </label>
                 </div>
-                <div className="device-item">
+                <div className={styles.deviceItem}>
                     <span>Đèn (LED 3)</span>
-                    <label className="switch">
+                    <label className={styles.switch}>
                         <input type="checkbox" checked={ledStatus.led3 === 'on'} onChange={() => handleToggle('led3')} />
-                        <span className="slider"></span>
+                        <span className={styles.slider}></span>
                     </label>
                 </div>
             </div>
-            {/* We can keep the all on/off buttons as a functional enhancement */}
-            <div className="all-controls">
+            <div className={styles.allControls}>
                 <button onClick={() => sendCommand('allon')}>All On</button>
                 <button onClick={() => sendCommand('alloff')}>All Off</button>
             </div>
@@ -43,4 +43,4 @@ function DeviceControls({ ledStatus, sendCommand }) {
     );
 }
 
-export default DeviceControls;  
+export default DeviceControls;

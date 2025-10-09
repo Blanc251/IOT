@@ -1,10 +1,11 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 
-import Sidebar from './components/Sidebar';
-import Dashboard from './components/Dashboard';
-import DataSensor from './components/DataSensor';
-import ActionHistory from './components/ActionHistory';
+import Sidebar from './components/Sidebar/Sidebar';
+import Dashboard from './components/Dashboard/Dashboard';
+import DataSensor from './components/DataSensor/DataSensor';
+import ActionHistory from './components/ActionHistory/ActionHistory';
+import Profile from './components/Profile/Profile';
 import './App.css';
 
 function App() {
@@ -16,8 +17,7 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/data-sensor" element={<DataSensor />} />
           <Route path="/action-history" element={<ActionHistory />} />
-          {/* Add a placeholder route for the profile page */}
-          <Route path="/profile" element={<h1>Profile Page</h1>} />
+          <Route path="/profile" element={<Profile />} />
         </Routes>
       </main>
     </div>

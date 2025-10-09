@@ -1,0 +1,51 @@
+.summaryCard {
+    background-color: var(--card-bg-color);
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px var(--shadow-color);
+}
+
+.cardHeader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--secondary-text-color);
+    margin-bottom: 10px;
+}
+
+.cardIcon {
+    font-size: 22px;
+}
+
+.summaryCard h3 {
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.summaryCard h2 {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-top: 4px;
+    margin-bottom: 8px;
+}
+
+.statusBadge {
+    font-size: 0.8rem;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 500;
+    color: white;
+}
+
+.normal {
+    background-color: var(--green);
+}
+
+.high {
+    background-color: var(--yellow);
+    color: var(--text-color);
+}
+
+.bright {
+    background-color: var(--cyan);
+}

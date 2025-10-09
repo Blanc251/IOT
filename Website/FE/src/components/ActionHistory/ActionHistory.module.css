@@ -1,0 +1,80 @@
+.pageWrapper {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-height: 0;
+}
+
+.header h1 {
+    font-size: 26px;
+    font-weight: 600;
+}
+
+.filterBar {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    background-color: var(--card-bg-color);
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px var(--shadow-color);
+}
+
+.filterBar select,
+.filterBar input {
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    font-size: 0.95rem;
+    font-family: 'Poppins', sans-serif;
+    background-color: #fff;
+}
+
+.filterBar input {
+    flex-grow: 1;
+}
+
+.filterBar button {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 8px;
+    background-color: var(--primary-color);
+    color: white;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.filterBar button:hover {
+    background-color: #0b5ed7;
+}
+
+.tableCard {
+    flex-grow: 1;
+    background-color: var(--card-bg-color);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px var(--shadow-color);
+    padding: 10px 20px;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.actionBadge {
+    font-weight: 600;
+}
+
+.on {
+    color: var(--green);
+}
+
+.off {
+    color: var(--secondary-text-color);
+}
+
+.footer {
+    flex-shrink: 0;
+    color: var(--secondary-text-color);
+    padding: 10px 0;
+}

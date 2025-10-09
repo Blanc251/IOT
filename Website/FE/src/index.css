@@ -1,34 +1,49 @@
-/*
-  File: src/index.css
-  Objective: Remove default centering and set up the root container for a full-page layout.
-*/
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --bg-color: #f4f7fe;
+  --card-bg-color: #ffffff;
+  --primary-color: #0d6efd;
+  --text-color: #343a40;
+  --secondary-text-color: #6c757d;
+  --border-color: #e9ecef;
+  --shadow-color: rgba(0, 0, 0, 0.05);
+  --green: #28a745;
+  --yellow: #ffc107;
+  --cyan: #17a2b8;
+  --red: #dc3545;
+  --main-spacing: 24px;
 }
 
-/*
-  The body is reset to remove default margin.
-*/
-body {
+* {
+  box-sizing: border-box;
   margin: 0;
+  padding: 0;
 }
 
-/*
-  The root element is set to fill the full width and height of the viewport.
-  This allows the React application within it to expand properly.
-*/
-#root {
-  width: 100vw;
-  height: 100vh;
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 16px 0;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+th {
+  font-weight: 500;
+  color: var(--secondary-text-color);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
 }

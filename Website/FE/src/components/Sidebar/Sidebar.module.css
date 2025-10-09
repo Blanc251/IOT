@@ -1,0 +1,46 @@
+.sidebar {
+    width: 250px;
+    background-color: var(--card-bg-color);
+    height: 100vh;
+    padding: 20px;
+    border-right: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.sidebarHeader {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.sidebarHeader h3 {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.sidebarMenu {
+    list-style: none;
+}
+
+.sidebarMenu a {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--secondary-text-color);
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.sidebarMenu a.active,
+.sidebarMenu a:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.sidebarMenu a svg {
+    font-size: 20px;
+}
