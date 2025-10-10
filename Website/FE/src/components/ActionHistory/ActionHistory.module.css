@@ -3,7 +3,6 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
-    min-height: 0;
 }
 
 .header h1 {
@@ -52,13 +51,10 @@
 }
 
 .tableCard {
-    flex-grow: 1;
     background-color: var(--card-bg-color);
     border-radius: 12px;
     box-shadow: 0 4px 20px var(--shadow-color);
     padding: 10px 20px;
-    overflow-y: auto;
-    min-height: 0;
 }
 
 .actionBadge {
@@ -74,6 +70,9 @@
 }
 
 .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     flex-shrink: 0;
     color: var(--secondary-text-color);
     padding: 10px 0;

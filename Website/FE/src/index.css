@@ -47,3 +47,16 @@ th {
 tbody tr:last-child td {
   border-bottom: none;
 }
+
+.app-container {
+  display: flex;
+  height: 100vh;
+}
+
+.main-content {
+  flex-grow: 1;
+  padding: var(--main-spacing);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}

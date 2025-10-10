@@ -1,14 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
+import Pagination from '../Pagination/Pagination';
 import styles from './ActionHistory.module.css';
 
 const API_URL = 'http://localhost:3001/api';
+const ITEMS_PER_PAGE = 10;
 
 function ActionHistory() {
     const [actions, setActions] = useState([]);
     const [filteredActions, setFilteredActions] = useState([]);
     const [actionFilter, setActionFilter] = useState('ALL');
     const [deviceFilter, setDeviceFilter] = useState('ALL');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [sortConfig, setSortConfig] = useState({ key: 'id', direction: 'descending' });
+    const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
         const fetchActions = async () => {
@@ -22,6 +27,31 @@ function ActionHistory() {
         fetchActions();
     }, []);
 
+    const sortedItems = useMemo(() => {
+        let sortableItems = [...filteredActions];
+        if (sortConfig.key) {
+            sortableItems.sort((a, b) => {
+                let aValue = a[sortConfig.key];
+                let bValue = b[sortConfig.key];
+
+                if (sortConfig.key === 'created_at') {
+                    aValue = new Date(aValue);
+                    bValue = new Date(bValue);
+                }
+
+                if (aValue < bValue) {
+                    return sortConfig.direction === 'ascending' ? -1 : 1;
+                }
+                if (aValue > bValue) {
+                    return sortConfig.direction === 'ascending' ? 1 : -1;
+                }
+                return 0;
+            });
+        }
+        return sortableItems;
+    }, [filteredActions, sortConfig]);
+
+
     useEffect(() => {
         let result = actions;
 
@@ -33,8 +63,36 @@ function ActionHistory() {
             result = result.filter(a => a.device === deviceFilter);
         }
 
+        if (searchQuery) {
+            const lowercasedQuery = searchQuery.toLowerCase();
+            result = result.filter(a => {
+                const timeString = new Date(a.created_at)
+                    .toLocaleString('en-GB', { hour12: false })
+                    .toLowerCase();
+                const idString = a.id.toString();
+
+                return timeString.includes(lowercasedQuery) || idString.includes(lowercasedQuery);
+            });
+        }
+
         setFilteredActions(result);
-    }, [actions, actionFilter, deviceFilter]);
+        setCurrentPage(1);
+    }, [actions, actionFilter, deviceFilter, searchQuery]);
+
+    const handleSortChange = (e) => {
+        setSortConfig(prevConfig => ({ ...prevConfig, key: e.target.value }));
+    };
+
+    const handleDirectionChange = (e) => {
+        setSortConfig(prevConfig => ({ ...prevConfig, direction: e.target.value }));
+    };
+
+    const totalPages = Math.ceil(sortedItems.length / ITEMS_PER_PAGE);
+    const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
+    const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+    const currentItems = sortedItems.slice(indexOfFirstItem, indexOfLastItem);
+    const startItem = sortedItems.length > 0 ? indexOfFirstItem + 1 : 0;
+    const endItem = Math.min(indexOfLastItem, sortedItems.length);
 
 
     return (
@@ -55,6 +113,20 @@ function ActionHistory() {
                     <option value="FAN">FAN</option>
                     <option value="AIR_CONDITIONER">AIR_CONDITIONER</option>
                 </select>
+                <input
+                    type="text"
+                    placeholder="Search by ID, date, or time..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                />
+                <select value={sortConfig.key} onChange={handleSortChange}>
+                    <option value="id">Sort by ID</option>
+                    <option value="created_at">Sort by Time</option>
+                </select>
+                <select value={sortConfig.direction} onChange={handleDirectionChange}>
+                    <option value="ascending">Ascending</option>
+                    <option value="descending">Descending</option>
+                </select>
             </div>
 
             <div className={styles.tableCard}>
@@ -64,10 +136,11 @@ function ActionHistory() {
                             <th>ID</th>
                             <th>Device</th>
                             <th>Hành động</th>
+                            <th>Time</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredActions.map(record => (
+                        {currentItems.map(record => (
                             <tr key={record.id}>
                                 <td>{record.id}</td>
                                 <td>{record.device}</td>
@@ -76,6 +149,7 @@ function ActionHistory() {
                                         {record.action}
                                     </span>
                                 </td>
+                                <td>{new Date(record.created_at).toLocaleString('en-GB', { hour12: false })}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -83,7 +157,12 @@ function ActionHistory() {
             </div>
 
             <div className={styles.footer}>
-                <span>Hiển thị {filteredActions.length} trong số {actions.length} thiết bị hoạt động gần đây</span>
+                <span>Hiển thị {startItem}-{endItem} của {sortedItems.length} kết quả</span>
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                />
             </div>
         </div>
     );

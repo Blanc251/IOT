@@ -6,17 +6,65 @@ import styles from './DataSensor.module.css';
 
 const API_URL = 'http://localhost:3001/api';
 
+function useDebounce(value, delay) {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedValue(value);
+        }, delay);
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [value, delay]);
+    return debouncedValue;
+}
+
 function DataSensor() {
     const [history, setHistory] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(0);
     const [totalItems, setTotalItems] = useState(0);
     const [itemsRange, setItemsRange] = useState({ start: 0, end: 0 });
+    const [searchTerm, setSearchTerm] = useState('');
+    const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
+    const formatSearchTerm = (term) => {
+        term = term.trim();
+        if (!term) return '';
+
+        // DD/MM/YYYY → YYYY-MM-DD
+        if (term.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
+            const [day, month, year] = term.split('/');
+            return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        }
+
+        // DD/MM → assume current year
+        if (term.match(/^\d{1,2}\/\d{1,2}$/)) {
+            const [day, month] = term.split('/');
+            const year = new Date().getFullYear();
+            return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        }
+
+        // Already in YYYY-MM-DD
+        if (term.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            return term;
+        }
+
+        // HH:mm time filtering
+        if (term.includes(':')) {
+            return term;
+        }
+
+        return term;
+    };
 
     useEffect(() => {
         const fetchHistory = async () => {
             try {
-                const response = await axios.get(`${API_URL}/data/history?page=${currentPage}`);
+                const formattedSearch = formatSearchTerm(debouncedSearchTerm);
+                const response = await axios.get(
+                    `${API_URL}/data/history?page=${currentPage}&search=${formattedSearch}`
+                );
                 const { data, totalPages, totalItems } = response.data;
                 setHistory(data);
                 setTotalPages(totalPages);
@@ -30,18 +78,30 @@ function DataSensor() {
             }
         };
         fetchHistory();
-    }, [currentPage]);
+    }, [currentPage, debouncedSearchTerm]);
+
+    useEffect(() => {
+        if (debouncedSearchTerm) {
+            setCurrentPage(1);
+        }
+    }, [debouncedSearchTerm]);
+
 
     return (
         <div className={styles.pageWrapper}>
             <div className={styles.pageHeader}>
+                <br></br>
                 <h1>Data Sensor</h1>
-                <p className={styles.pageSubtitle}>Tra cứu theo ID cảm biến, tên, vị trí...</p>
             </div>
 
             <div className={styles.searchBar}>
                 <BsSearch className={styles.searchIcon} />
-                <input type="text" placeholder="Search..." />
+                <input
+                    type="text"
+                    placeholder="Search by date (DD/MM/YYYY) or time (HH:mm)"
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                />
             </div>
 
             <div className={styles.tableCard}>
