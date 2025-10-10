@@ -14,21 +14,21 @@ function DeviceControls({ ledStatus, sendCommand }) {
             <h3>Thiết bị</h3>
             <div className={styles.deviceList}>
                 <div className={styles.deviceItem}>
-                    <span>Quạt (LED 1)</span>
+                    <span>FAN</span>
                     <label className={styles.switch}>
                         <input type="checkbox" checked={ledStatus.led1 === 'on'} onChange={() => handleToggle('led1')} />
                         <span className={styles.slider}></span>
                     </label>
                 </div>
                 <div className={styles.deviceItem}>
-                    <span>Điều hòa (LED 2)</span>
+                    <span>AIR_CONDITIONER</span>
                     <label className={styles.switch}>
                         <input type="checkbox" checked={ledStatus.led2 === 'on'} onChange={() => handleToggle('led2')} />
                         <span className={styles.slider}></span>
                     </label>
                 </div>
                 <div className={styles.deviceItem}>
-                    <span>Đèn (LED 3)</span>
+                    <span>LED</span>
                     <label className={styles.switch}>
                         <input type="checkbox" checked={ledStatus.led3 === 'on'} onChange={() => handleToggle('led3')} />
                         <span className={styles.slider}></span>

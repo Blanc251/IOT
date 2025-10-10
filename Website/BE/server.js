@@ -19,9 +19,9 @@ let db;
 (async function connectToDb() {
     try {
         db = await mysql.createConnection(dbConfig);
-        console.log('Connected to MySQL database!');
+        console.log('Successfully connected to MySQL database!');
     } catch (error) {
-        console.error('Database connection failed:', error);
+        console.error('DATABASE CONNECTION FAILED:', error);
         process.exit(1);
     }
 })();
@@ -36,7 +36,6 @@ const SENSOR_TOPIC = "iot/sensor/data";
 const COMMAND_TOPIC = "iot/led/control";
 const STATUS_TOPIC = "iot/led/status";
 
-// 1. Add a variable to store the current LED status
 let currentLedStatus = { led1: 'off', led2: 'off', led3: 'off' };
 
 client.on('connect', () => {
@@ -52,23 +51,18 @@ client.on('message', async (topic, message) => {
     const data = JSON.parse(message.toString());
 
     if (topic === SENSOR_TOPIC) {
-        console.log('Received sensor data:', data);
         try {
             const sql = 'INSERT INTO sensor_readings (temperature, humidity, light) VALUES (?, ?, ?)';
             await db.query(sql, [data.temperature, data.humidity, data.light]);
-            console.log('Sensor data saved to database.');
         } catch (error) {
             console.error('Failed to save sensor data:', error);
         }
     }
 
-    // 2. Update the status when a message is received from the device
     if (topic === STATUS_TOPIC) {
-        console.log('Received LED status:', data);
         if (data && data.led && (data.status === 'on' || data.status === 'off')) {
             if (currentLedStatus.hasOwnProperty(data.led)) {
                 currentLedStatus[data.led] = data.status;
-                console.log(`Updated server state: ${data.led} is now ${data.status}`);
             }
         }
     }
@@ -77,44 +71,74 @@ client.on('message', async (topic, message) => {
 app.get('/api/data', async (req, res) => {
     try {
         const [sensorRows] = await db.query('SELECT * FROM sensor_readings ORDER BY created_at DESC LIMIT 1');
-
-        // 3. Send the REAL currentLedStatus to the front-end
         res.json({
             sensors: sensorRows[0] || {},
             leds: currentLedStatus
         });
     } catch (error) {
-        console.error('API Error fetching data:', error);
+        console.error('API Error fetching real-time data:', error);
         res.status(500).json({ error: 'Failed to fetch data' });
     }
 });
 
-app.post('/api/command', (req, res) => {
+app.post('/api/command', async (req, res) => {
     const { command } = req.body;
+    console.log(`Received API call to /api/command with command: "${command}"`);
+
     if (!command) {
+        console.error('Error: Command string is required.');
         return res.status(400).send('Command string is required');
     }
 
-    if (command === 'allon') {
-        currentLedStatus = { led1: 'on', led2: 'on', led3: 'on' };
-    } else if (command === 'alloff') {
-        currentLedStatus = { led1: 'off', led2: 'off', led3: 'off' };
+    let device, action;
+
+    if (command === 'allon' || command === 'alloff') {
+        device = 'ALL_DEVICES';
+        action = command === 'allon' ? 'ON' : 'OFF';
     } else {
         const ledName = command.slice(0, 4);
         const state = command.slice(4);
-        if (currentLedStatus.hasOwnProperty(ledName)) {
-            currentLedStatus[ledName] = state;
+        if (ledName === 'led1') device = 'FAN';
+        else if (ledName === 'led2') device = 'AIR_CONDITIONER';
+        else if (ledName === 'led3') device = 'LED';
+        action = state.toUpperCase();
+    }
+
+    if (device && action) {
+        console.log(`Attempting to log to database: Device='${device}', Action='${action}'`);
+        try {
+            const sql = 'INSERT INTO action_logs (device, action) VALUES (?, ?)';
+            const [result] = await db.query(sql, [device, action]);
+            console.log(`Action logged successfully! Insert ID: ${result.insertId}`);
+        } catch (error) {
+            console.error('DATABASE INSERT FAILED:', error.message);
         }
+    } else {
+        console.warn('Could not determine device/action to log.');
     }
 
     client.publish(COMMAND_TOPIC, command, (err) => {
         if (err) {
-            console.error('Failed to publish command:', err);
+            console.error('MQTT Publish Failed:', err);
             return res.status(500).send('Failed to send command');
         }
-        console.log(`Command sent to ${COMMAND_TOPIC}:`, command);
+        console.log(`Command sent to MQTT topic "${COMMAND_TOPIC}":`, command);
         res.status(200).send('Command sent successfully');
     });
+});
+
+app.get('/api/actions/history', async (req, res) => {
+    console.log(`Received API call to /api/actions/history`);
+    try {
+        const query = 'SELECT * FROM action_logs ORDER BY created_at DESC';
+        console.log('Executing SQL Query:', query);
+        const [actions] = await db.query(query);
+        console.log(`Found ${actions.length} records in action_logs.`);
+        res.json(actions);
+    } catch (error) {
+        console.error('DATABASE SELECT FAILED:', error.message);
+        res.status(500).json({ error: 'Failed to fetch action history' });
+    }
 });
 
 app.get('/api/data/history', async (req, res) => {
@@ -122,15 +146,12 @@ app.get('/api/data/history', async (req, res) => {
         const page = parseInt(req.query.page || 1);
         const limit = 10;
         const offset = (page - 1) * limit;
-
         const [[{ totalItems }]] = await db.query('SELECT COUNT(*) as totalItems FROM sensor_readings');
         const totalPages = Math.ceil(totalItems / limit);
-
         const [data] = await db.query('SELECT * FROM sensor_readings ORDER BY created_at DESC LIMIT ? OFFSET ?', [limit, offset]);
-
         res.json({ totalItems, totalPages, currentPage: page, data });
     } catch (error) {
-        console.error('API Error fetching history:', error);
+        console.error('API Error fetching sensor history:', error);
         res.status(500).json({ error: 'Failed to fetch history' });
     }
 });

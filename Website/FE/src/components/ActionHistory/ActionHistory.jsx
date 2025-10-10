@@ -1,25 +1,41 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import styles from './ActionHistory.module.css';
 
-const mockActions = [
-    { id: 90, device: 'LED', action: 'OFF', time: '16/10/2024 14:53' },
-    { id: 91, device: 'AIR_CONDITIONER', action: 'OFF', time: '16/10/2024 14:39' },
-    { id: 92, device: 'LED', action: 'OFF', time: '16/10/2024 14:30' },
-    { id: 93, device: 'AIR_CONDITIONER', action: 'OFF', time: '16/10/2024 14:07' },
-    { id: 94, device: 'AIR_CONDITIONER', action: 'ON', time: '16/10/2024 13:59' },
-    { id: 95, device: 'AIR_CONDITIONER', action: 'ON', time: '16/10/2024 13:38' },
-    { id: 96, device: 'FAN', action: 'OFF', time: '16/10/2024 13:27' },
-    { id: 97, device: 'FAN', action: 'ON', time: '16/10/2024 13:10' },
-    { id: 98, device: 'FAN', action: 'ON', time: '16/10/2024 12:56' },
-    { id: 99, device: 'AIR_CONDITIONER', action: 'ON', time: '16/10/2024 12:44' },
-];
+const API_URL = 'http://localhost:3001/api';
 
 function ActionHistory() {
     const [actions, setActions] = useState([]);
+    const [filteredActions, setFilteredActions] = useState([]);
+    const [actionFilter, setActionFilter] = useState('ALL');
+    const [deviceFilter, setDeviceFilter] = useState('ALL');
 
     useEffect(() => {
-        setActions(mockActions);
+        const fetchActions = async () => {
+            try {
+                const response = await axios.get(`${API_URL}/actions/history`);
+                setActions(response.data);
+            } catch (error) {
+                console.error("Error fetching action history:", error);
+            }
+        };
+        fetchActions();
     }, []);
+
+    useEffect(() => {
+        let result = actions;
+
+        if (actionFilter !== 'ALL') {
+            result = result.filter(a => a.action === actionFilter);
+        }
+
+        if (deviceFilter !== 'ALL') {
+            result = result.filter(a => a.device === deviceFilter);
+        }
+
+        setFilteredActions(result);
+    }, [actions, actionFilter, deviceFilter]);
+
 
     return (
         <div className={styles.pageWrapper}>
@@ -28,19 +44,17 @@ function ActionHistory() {
             </div>
 
             <div className={styles.filterBar}>
-                <select>
-                    <option>ALL</option>
-                    <option>ON</option>
-                    <option>OFF</option>
+                <select value={actionFilter} onChange={e => setActionFilter(e.target.value)}>
+                    <option value="ALL">ALL Actions</option>
+                    <option value="ON">ON</option>
+                    <option value="OFF">OFF</option>
                 </select>
-                <select>
-                    <option>Tìm thiết bị</option>
-                    <option>LED</option>
-                    <option>FAN</option>
-                    <option>AIR_CONDITIONER</option>
+                <select value={deviceFilter} onChange={e => setDeviceFilter(e.target.value)}>
+                    <option value="ALL">ALL Devices</option>
+                    <option value="LED">LED</option>
+                    <option value="FAN">FAN</option>
+                    <option value="AIR_CONDITIONER">AIR_CONDITIONER</option>
                 </select>
-                <input type="text" placeholder="Nhập thiết bị cần tìm" />
-                <button>Search</button>
             </div>
 
             <div className={styles.tableCard}>
@@ -50,11 +64,10 @@ function ActionHistory() {
                             <th>ID</th>
                             <th>Device</th>
                             <th>Hành động</th>
-                            <th>Time</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {actions.map(record => (
+                        {filteredActions.map(record => (
                             <tr key={record.id}>
                                 <td>{record.id}</td>
                                 <td>{record.device}</td>
@@ -63,7 +76,6 @@ function ActionHistory() {
                                         {record.action}
                                     </span>
                                 </td>
-                                <td>{record.time}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -71,7 +83,7 @@ function ActionHistory() {
             </div>
 
             <div className={styles.footer}>
-                <span>Hiển thị 10 trong số 20 thiết bị hoạt động gần đây</span>
+                <span>Hiển thị {filteredActions.length} trong số {actions.length} thiết bị hoạt động gần đây</span>
             </div>
         </div>
     );

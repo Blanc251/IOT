@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import SummaryCard from '../SummaryCard/SummaryCard';
 import DeviceControls from '../DeviceControl/DeviceControls';
@@ -73,78 +73,62 @@ const chartOptions = {
     scales: { y: { beginAtZero: true } },
 };
 
-function Dashboard() {
+function Dashboard({ ledStatus, sendCommand }) {
     const [sensorData, setSensorData] = useState({ temperature: 0, humidity: 0, light: 0 });
-    const [ledStatus, setLedStatus] = useState({ led1: 'off', led2: 'off', led3: 'off' });
     const [tempHumidityData, setTempHumidityData] = useState(initialChartData);
     const [lightData, setLightData] = useState(initialLightChartData);
+    const intervalRef = useRef(null);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const response = await axios.get(`${API_URL}/data`);
-                if (response.data.sensors) {
-                    const { temperature, humidity, light } = response.data.sensors;
-                    setSensorData({ temperature, humidity, light });
-
-                    const newLabel = new Date().toLocaleTimeString();
-
-                    setTempHumidityData(prevData => {
-                        const labels = [...prevData.labels, newLabel].slice(-10);
-                        const newTempData = [...prevData.datasets[0].data, temperature].slice(-10);
-                        const newHumidityData = [...prevData.datasets[1].data, humidity].slice(-10);
-                        return {
-                            ...prevData,
-                            labels,
-                            datasets: [
-                                { ...prevData.datasets[0], data: newTempData },
-                                { ...prevData.datasets[1], data: newHumidityData },
-                            ]
-                        };
-                    });
-
-                    setLightData(prevData => {
-                        const labels = [...prevData.labels, newLabel].slice(-10);
-                        const newLightData = [...prevData.datasets[0].data, light].slice(-10);
-                        return {
-                            ...prevData,
-                            labels,
-                            datasets: [{ ...prevData.datasets[0], data: newLightData }]
-                        };
-                    });
-                }
-                if (response.data.leds) setLedStatus(response.data.leds);
-            } catch (error) {
-                console.error("Error fetching data:", error);
-            }
-        };
-        fetchData();
-        const interval = setInterval(fetchData, 3000);
-        return () => clearInterval(interval);
-    }, []);
-
-    const sendCommand = async (command) => {
-        setLedStatus(prevStatus => {
-            const newStatus = { ...prevStatus };
-            if (command.startsWith('all')) {
-                const state = command === 'allon' ? 'on' : 'off';
-                return { led1: state, led2: state, led3: state };
-            } else {
-                const ledName = command.slice(0, 4);
-                const state = command.slice(4);
-                if (newStatus.hasOwnProperty(ledName)) {
-                    newStatus[ledName] = state;
-                }
-                return newStatus;
-            }
-        });
-
+    const fetchData = async () => {
         try {
-            await axios.post(`${API_URL}/command`, { command });
+            const response = await axios.get(`${API_URL}/data`);
+            if (response.data.sensors) {
+                const { temperature, humidity, light } = response.data.sensors;
+                setSensorData({ temperature, humidity, light });
+
+                const newLabel = new Date().toLocaleTimeString();
+
+                setTempHumidityData(prevData => {
+                    const labels = [...prevData.labels, newLabel].slice(-10);
+                    const newTempData = [...prevData.datasets[0].data, temperature].slice(-10);
+                    const newHumidityData = [...prevData.datasets[1].data, humidity].slice(-10);
+                    return {
+                        ...prevData,
+                        labels,
+                        datasets: [
+                            { ...prevData.datasets[0], data: newTempData },
+                            { ...prevData.datasets[1], data: newHumidityData },
+                        ]
+                    };
+                });
+
+                setLightData(prevData => {
+                    const labels = [...prevData.labels, newLabel].slice(-10);
+                    const newLightData = [...prevData.datasets[0].data, light].slice(-10);
+                    return {
+                        ...prevData,
+                        labels,
+                        datasets: [{ ...prevData.datasets[0], data: newLightData }]
+                    };
+                });
+            }
         } catch (error) {
-            console.error(`Error sending command "${command}":`, error);
+            console.error("Error fetching data:", error);
         }
     };
+
+    const startPolling = () => {
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        intervalRef.current = setInterval(fetchData, 3000);
+    };
+
+    useEffect(() => {
+        fetchData();
+        startPolling();
+        return () => {
+            if (intervalRef.current) clearInterval(intervalRef.current);
+        };
+    }, []);
 
     return (
         <div className={styles.dashboardContentWrapper}>

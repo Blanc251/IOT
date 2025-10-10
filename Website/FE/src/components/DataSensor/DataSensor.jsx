@@ -62,7 +62,7 @@ function DataSensor() {
                                 <td>{record.temperature}</td>
                                 <td>{record.humidity}</td>
                                 <td>{record.light}</td>
-                                <td>{record.time}</td>
+                                <td>{new Date(record.created_at).toLocaleString('en-GB', { hour12: false })}</td>
                             </tr>
                         ))}
                     </tbody>
