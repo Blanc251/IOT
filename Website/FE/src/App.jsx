@@ -2,7 +2,7 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 
 import Sidebar from './components/Sidebar/Sidebar';
-import Dashboard from './components/Dashboard/Dashboard';
+import Dashboard from './components/DashBoard/Dashboard';
 import DataSensor from './components/DataSensor/DataSensor';
 import ActionHistory from './components/ActionHistory/ActionHistory';
 import Profile from './components/Profile/Profile';

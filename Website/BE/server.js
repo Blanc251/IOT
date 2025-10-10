@@ -26,7 +26,7 @@ let db;
     }
 })();
 
-const mqttBrokerUrl = 'mqtt://172.20.10.2:1883';
+const mqttBrokerUrl = 'mqtt://192.168.1.21:1883';
 const client = mqtt.connect(mqttBrokerUrl, {
     username: 'vui',
     password: '12345'
@@ -94,6 +94,19 @@ app.post('/api/command', (req, res) => {
     if (!command) {
         return res.status(400).send('Command string is required');
     }
+
+    if (command === 'allon') {
+        currentLedStatus = { led1: 'on', led2: 'on', led3: 'on' };
+    } else if (command === 'alloff') {
+        currentLedStatus = { led1: 'off', led2: 'off', led3: 'off' };
+    } else {
+        const ledName = command.slice(0, 4);
+        const state = command.slice(4);
+        if (currentLedStatus.hasOwnProperty(ledName)) {
+            currentLedStatus[ledName] = state;
+        }
+    }
+
     client.publish(COMMAND_TOPIC, command, (err) => {
         if (err) {
             console.error('Failed to publish command:', err);
