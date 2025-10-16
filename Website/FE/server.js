@@ -47,7 +47,7 @@ let db;
     }
 })();
 
-const mqttBrokerUrl = 'mqtt://192.168.1.38:1883';
+const mqttBrokerUrl = 'mqtt://172.20.10.2:1883';
 const SENSOR_TOPIC = 'iot/sensor/data';
 const COMMAND_TOPIC = 'iot/led/control';
 const STATUS_TOPIC = 'iot/led/status';
@@ -75,8 +75,8 @@ client.on('connect', () => {
 
 client.on('reconnect', () => {
     console.log('Reconnecting to MQTT Broker...');
-    isMqttConnected = false;
-    broadcastMqttStatus();
+    // isMqttConnected = false;
+    // broadcastMqttStatus();
 });
 
 client.on('close', () => {

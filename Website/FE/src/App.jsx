@@ -13,6 +13,7 @@ const API_URL = 'http://localhost:3001/api';
 
 function App() {
   const [ledStatus, setLedStatus] = useState({ led1: 'off', led2: 'off', led3: 'off' });
+  const [isMqttConnected, setIsMqttConnected] = useState(false);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -26,6 +27,18 @@ function App() {
       }
     };
     fetchInitialData();
+
+    const ws = new WebSocket('ws://' + window.location.hostname + ':3001');
+    ws.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      if (message.type === 'MQTT_STATUS') {
+        setIsMqttConnected(message.isConnected);
+      }
+    };
+
+    return () => {
+      ws.close();
+    };
   }, []);
 
   const sendCommand = async (command) => {
@@ -48,8 +61,6 @@ function App() {
       await axios.post(`${API_URL}/command`, { command });
     } catch (error) {
       console.error(`Error sending command "${command}":`, error);
-      // If there's an error, you might want to revert the state
-      // or fetch the current state from the server again.
       const response = await axios.get(`${API_URL}/data`);
       if (response.data.leds) {
         setLedStatus(response.data.leds);
@@ -62,7 +73,7 @@ function App() {
       <Sidebar />
       <main className="main-content">
         <Routes>
-          <Route path="/" element={<Dashboard ledStatus={ledStatus} sendCommand={sendCommand} />} />
+          <Route path="/" element={<Dashboard ledStatus={ledStatus} sendCommand={sendCommand} isMqttConnected={isMqttConnected} />} />
           <Route path="/data-sensor" element={<DataSensor />} />
           <Route path="/action-history" element={<ActionHistory />} />
           <Route path="/profile" element={<Profile />} />

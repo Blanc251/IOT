@@ -16,7 +16,6 @@ import {
     Filler,
 } from 'chart.js';
 
-import { BsThermometerHalf, BsDropletHalf, BsSun } from 'react-icons/bs';
 import styles from './Dashboard.module.css';
 
 ChartJS.register(
@@ -73,7 +72,7 @@ const chartOptions = {
     scales: { y: { beginAtZero: true } },
 };
 
-function Dashboard({ ledStatus, sendCommand }) {
+function Dashboard({ ledStatus, sendCommand, isMqttConnected }) {
     const [sensorData, setSensorData] = useState({ temperature: 0, humidity: 0, light: 0 });
     const [tempHumidityData, setTempHumidityData] = useState(initialChartData);
     const [lightData, setLightData] = useState(initialLightChartData);
@@ -123,20 +122,28 @@ function Dashboard({ ledStatus, sendCommand }) {
     };
 
     useEffect(() => {
-        fetchData();
-        startPolling();
+        if (isMqttConnected) {
+            fetchData();
+            startPolling();
+        }
+
         return () => {
             if (intervalRef.current) clearInterval(intervalRef.current);
         };
-    }, []);
+    }, [isMqttConnected]);
 
     return (
         <div className={styles.dashboardContentWrapper}>
-            <h1>Dashboard</h1>
+            <div className={styles.header}>
+                <h1>Dashboard</h1>
+                <div className={`${styles.statusIndicator} ${isMqttConnected ? styles.connected : styles.disconnected}`}>
+                    {isMqttConnected ? 'MQTT Connected' : 'MQTT Disconnected'}
+                </div>
+            </div>
 
             <div className={styles.summaryCardsContainer}>
                 <SummaryCard
-                    icon={<BsThermometerHalf />}
+
                     title="Nhiệt độ"
                     value={sensorData.temperature}
                     unit="°C"
@@ -144,7 +151,7 @@ function Dashboard({ ledStatus, sendCommand }) {
                     statusType="normal"
                 />
                 <SummaryCard
-                    icon={<BsDropletHalf />}
+
                     title="Độ ẩm"
                     value={sensorData.humidity}
                     unit="%"
@@ -152,7 +159,7 @@ function Dashboard({ ledStatus, sendCommand }) {
                     statusType="high"
                 />
                 <SummaryCard
-                    icon={<BsSun />}
+
                     title="Ánh sáng"
                     value={sensorData.light}
                     unit="nits"
@@ -176,7 +183,7 @@ function Dashboard({ ledStatus, sendCommand }) {
                 </div>
             </div>
 
-            <DeviceControls ledStatus={ledStatus} sendCommand={sendCommand} />
+            <DeviceControls ledStatus={ledStatus} sendCommand={sendCommand} isMqttConnected={isMqttConnected} />
         </div>
     );
 }
