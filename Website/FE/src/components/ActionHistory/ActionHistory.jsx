@@ -6,7 +6,7 @@ import styles from './ActionHistory.module.css';
 const API_URL = 'http://localhost:3001/api';
 const ITEMS_PER_PAGE = 10;
 
-function ActionHistory() {
+function ActionHistory({ isEsp32DataConnected }) {
     const [actions, setActions] = useState([]);
     const [filteredActions, setFilteredActions] = useState([]);
     const [actionFilter, setActionFilter] = useState('ALL');
@@ -16,6 +16,13 @@ function ActionHistory() {
     const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
+        if (!isEsp32DataConnected) {
+            setActions([]);
+            setFilteredActions([]);
+            setCurrentPage(1);
+            return;
+        }
+
         const fetchActions = async () => {
             try {
                 const response = await axios.get(`${API_URL}/actions/history`);
@@ -25,7 +32,7 @@ function ActionHistory() {
             }
         };
         fetchActions();
-    }, []);
+    }, [isEsp32DataConnected]);
 
     const sortedItems = useMemo(() => {
         let sortableItems = [...filteredActions];
@@ -53,6 +60,8 @@ function ActionHistory() {
 
 
     useEffect(() => {
+        if (!isEsp32DataConnected) return;
+
         let result = actions;
 
         if (actionFilter !== 'ALL') {
@@ -77,7 +86,7 @@ function ActionHistory() {
 
         setFilteredActions(result);
         setCurrentPage(1);
-    }, [actions, actionFilter, deviceFilter, searchQuery]);
+    }, [actions, actionFilter, deviceFilter, searchQuery, isEsp32DataConnected]);
 
     const handleSortChange = (e) => {
         setSortConfig(prevConfig => ({ ...prevConfig, key: e.target.value }));
@@ -102,12 +111,12 @@ function ActionHistory() {
             </div>
 
             <div className={styles.filterBar}>
-                <select value={actionFilter} onChange={e => setActionFilter(e.target.value)}>
+                <select value={actionFilter} onChange={e => setActionFilter(e.target.value)} disabled={!isEsp32DataConnected}>
                     <option value="ALL">ALL Actions</option>
                     <option value="ON">ON</option>
                     <option value="OFF">OFF</option>
                 </select>
-                <select value={deviceFilter} onChange={e => setDeviceFilter(e.target.value)}>
+                <select value={deviceFilter} onChange={e => setDeviceFilter(e.target.value)} disabled={!isEsp32DataConnected}>
                     <option value="ALL">ALL Devices</option>
                     <option value="LED">LED</option>
                     <option value="FAN">FAN</option>
@@ -118,12 +127,13 @@ function ActionHistory() {
                     placeholder="Search by ID, date, or time..."
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
+                    disabled={!isEsp32DataConnected}
                 />
-                <select value={sortConfig.key} onChange={handleSortChange}>
+                <select value={sortConfig.key} onChange={handleSortChange} disabled={!isEsp32DataConnected}>
                     <option value="id">Sort by ID</option>
                     <option value="created_at">Sort by Time</option>
                 </select>
-                <select value={sortConfig.direction} onChange={handleDirectionChange}>
+                <select value={sortConfig.direction} onChange={handleDirectionChange} disabled={!isEsp32DataConnected}>
                     <option value="ascending">Ascending</option>
                     <option value="descending">Descending</option>
                 </select>
@@ -157,7 +167,8 @@ function ActionHistory() {
             </div>
 
             <div className={styles.footer}>
-                <span>Hiển thị {startItem}-{endItem} của {sortedItems.length} kết quả</span>
+                {/* Updated message */}
+                <span>{isEsp32DataConnected ? `Hiển thị ${startItem}-${endItem} của ${sortedItems.length} kết quả` : 'Thiết bị đang ngắt kết nối. Vui lòng kết nối thiết bị để xem lịch sử.'}</span>
                 <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}

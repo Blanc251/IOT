@@ -114,3 +114,7 @@ input:checked+.slider:before {
     cursor: not-allowed;
     opacity: 0.6;
 }
+
+.deviceItem>span:first-child[disabled="true"] {
+    color: #adb5bd;
+}

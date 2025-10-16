@@ -12,15 +12,27 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
 let isMqttConnected = false;
+let isEsp32DataConnected = false;
+let lastDataTimestamp = 0;
+const DATA_TIMEOUT = 10000; // 10 seconds timeout for data connection
 
 wss.on('connection', (ws) => {
     ws.send(JSON.stringify({ type: 'MQTT_STATUS', isConnected: isMqttConnected }));
+    ws.send(JSON.stringify({ type: 'DATA_STATUS', isConnected: isEsp32DataConnected }));
 });
 
 function broadcastMqttStatus() {
     wss.clients.forEach((client) => {
         if (client.readyState === client.OPEN) {
             client.send(JSON.stringify({ type: 'MQTT_STATUS', isConnected: isMqttConnected }));
+        }
+    });
+}
+
+function broadcastDataStatus() {
+    wss.clients.forEach((client) => {
+        if (client.readyState === client.OPEN) {
+            client.send(JSON.stringify({ type: 'DATA_STATUS', isConnected: isEsp32DataConnected }));
         }
     });
 }
@@ -92,11 +104,29 @@ client.on('error', (error) => {
     client.end();
 });
 
+function checkDataConnection() {
+    const timeSinceLastData = Date.now() - lastDataTimestamp;
+    const currentlyConnected = timeSinceLastData < DATA_TIMEOUT;
+
+    if (isEsp32DataConnected !== currentlyConnected) {
+        isEsp32DataConnected = currentlyConnected;
+        console.log(`ESP32 Data Connection status changed: ${isEsp32DataConnected ? 'Connected' : 'Disconnected'}`);
+        broadcastDataStatus();
+    }
+}
+
+setInterval(checkDataConnection, 5000);
 
 client.on('message', async (topic, message) => {
     const data = JSON.parse(message.toString());
 
     if (topic === SENSOR_TOPIC) {
+        lastDataTimestamp = Date.now();
+        if (!isEsp32DataConnected) {
+            isEsp32DataConnected = true;
+            broadcastDataStatus();
+        }
+
         try {
             const sql = `INSERT INTO sensor_readings (temperature, humidity, light) VALUES (?, ?, ?)`;
             await db.query(sql, [data.temperature, data.humidity, data.light]);
@@ -128,7 +158,7 @@ app.get('/api/data', async (req, res) => {
 });
 
 app.get('/api/mqtt-status', (req, res) => {
-    res.json({ isConnected: isMqttConnected });
+    res.json({ isConnected: isMqttConnected, isEsp32DataConnected: isEsp32DataConnected });
 });
 
 app.post('/api/command', async (req, res) => {
@@ -136,6 +166,10 @@ app.post('/api/command', async (req, res) => {
 
     if (!command) {
         return res.status(400).json({ error: 'Command is required' });
+    }
+
+    if (!isEsp32DataConnected) {
+        return res.status(503).json({ error: 'Device is disconnected. Cannot send command.' });
     }
 
     let device = null;
@@ -170,7 +204,7 @@ app.post('/api/command', async (req, res) => {
     client.publish(COMMAND_TOPIC, command, (err) => {
         if (err) {
             console.error('MQTT publish error:', err.message);
-            return res.status(500).json({ error: 'Failed to send command' });
+            return res.status(500).json({ error: 'Failed to send command (MQTT Broker issue)' });
         }
 
         console.log(`Sent command via MQTT: ${command}`);

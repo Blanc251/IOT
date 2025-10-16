@@ -19,7 +19,7 @@ function useDebounce(value, delay) {
     return debouncedValue;
 }
 
-function DataSensor() {
+function DataSensor({ isEsp32DataConnected }) {
     const [history, setHistory] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(0);
@@ -59,6 +59,11 @@ function DataSensor() {
     };
 
     useEffect(() => {
+        // Chỉ cần thoát (return) nếu không kết nối, không cần xóa dữ liệu
+        if (!isEsp32DataConnected) {
+            return;
+        }
+
         const fetchHistory = async () => {
             try {
                 const formattedSearch = formatSearchTerm(debouncedSearchTerm);
@@ -78,7 +83,7 @@ function DataSensor() {
             }
         };
         fetchHistory();
-    }, [currentPage, debouncedSearchTerm]);
+    }, [currentPage, debouncedSearchTerm, isEsp32DataConnected]);
 
     useEffect(() => {
         if (debouncedSearchTerm) {
@@ -101,6 +106,7 @@ function DataSensor() {
                     placeholder="Search by date (DD/MM/YYYY) or time (HH:mm)"
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
+                    disabled={!isEsp32DataConnected}
                 />
             </div>
 
@@ -130,7 +136,7 @@ function DataSensor() {
             </div>
 
             <div className={styles.paginationFooter}>
-                <span>Hiển thị {itemsRange.start}-{itemsRange.end} của {totalItems} kết quả</span>
+                <span>{isEsp32DataConnected ? `Hiển thị ${itemsRange.start}-${itemsRange.end} của ${totalItems} kết quả` : `Hiển thị ${itemsRange.start}-${itemsRange.end} của ${totalItems} kết quả (Đã đóng băng)`}</span>
                 <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}

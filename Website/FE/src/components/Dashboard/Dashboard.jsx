@@ -72,7 +72,7 @@ const chartOptions = {
     scales: { y: { beginAtZero: true } },
 };
 
-function Dashboard({ ledStatus, sendCommand, isMqttConnected }) {
+function Dashboard({ ledStatus, sendCommand, isEsp32DataConnected }) {
     const [sensorData, setSensorData] = useState({ temperature: 0, humidity: 0, light: 0 });
     const [tempHumidityData, setTempHumidityData] = useState(initialChartData);
     const [lightData, setLightData] = useState(initialLightChartData);
@@ -122,22 +122,23 @@ function Dashboard({ ledStatus, sendCommand, isMqttConnected }) {
     };
 
     useEffect(() => {
-        if (isMqttConnected) {
+        if (isEsp32DataConnected) {
             fetchData();
             startPolling();
+        } else {
+            if (intervalRef.current) clearInterval(intervalRef.current);
         }
-
         return () => {
             if (intervalRef.current) clearInterval(intervalRef.current);
         };
-    }, [isMqttConnected]);
+    }, [isEsp32DataConnected]);
 
     return (
         <div className={styles.dashboardContentWrapper}>
             <div className={styles.header}>
                 <h1>Dashboard</h1>
-                <div className={`${styles.statusIndicator} ${isMqttConnected ? styles.connected : styles.disconnected}`}>
-                    {isMqttConnected ? 'MQTT Connected' : 'MQTT Disconnected'}
+                <div className={`${styles.statusIndicator} ${isEsp32DataConnected ? styles.connected : styles.disconnected}`}>
+                    {isEsp32DataConnected ? 'ESP32 Data Connected' : 'ESP32 Data Disconnected'}
                 </div>
             </div>
 
@@ -183,7 +184,7 @@ function Dashboard({ ledStatus, sendCommand, isMqttConnected }) {
                 </div>
             </div>
 
-            <DeviceControls ledStatus={ledStatus} sendCommand={sendCommand} isMqttConnected={isMqttConnected} />
+            <DeviceControls ledStatus={ledStatus} sendCommand={sendCommand} isEsp32DataConnected={isEsp32DataConnected} />
         </div>
     );
 }

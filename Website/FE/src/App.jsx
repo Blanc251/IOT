@@ -13,7 +13,7 @@ const API_URL = 'http://localhost:3001/api';
 
 function App() {
   const [ledStatus, setLedStatus] = useState({ led1: 'off', led2: 'off', led3: 'off' });
-  const [isMqttConnected, setIsMqttConnected] = useState(false);
+  const [isEsp32DataConnected, setIsEsp32DataConnected] = useState(false);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -31,8 +31,8 @@ function App() {
     const ws = new WebSocket('ws://' + window.location.hostname + ':3001');
     ws.onmessage = (event) => {
       const message = JSON.parse(event.data);
-      if (message.type === 'MQTT_STATUS') {
-        setIsMqttConnected(message.isConnected);
+      if (message.type === 'DATA_STATUS') {
+        setIsEsp32DataConnected(message.isConnected);
       }
     };
 
@@ -73,9 +73,10 @@ function App() {
       <Sidebar />
       <main className="main-content">
         <Routes>
-          <Route path="/" element={<Dashboard ledStatus={ledStatus} sendCommand={sendCommand} isMqttConnected={isMqttConnected} />} />
-          <Route path="/data-sensor" element={<DataSensor />} />
-          <Route path="/action-history" element={<ActionHistory />} />
+          <Route path="/" element={<Dashboard ledStatus={ledStatus} sendCommand={sendCommand} isEsp32DataConnected={isEsp32DataConnected} />} />
+          <Route path="/data-sensor" element={<DataSensor isEsp32DataConnected={isEsp32DataConnected} />} />
+
+          <Route path="/action-history" element={<ActionHistory isEsp32DataConnected={isEsp32DataConnected} />} />
           <Route path="/profile" element={<Profile />} />
         </Routes>
       </main>
