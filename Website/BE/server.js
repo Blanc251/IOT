@@ -4,6 +4,8 @@ import cors from 'cors';
 import mysql from 'mysql2/promise';
 import http from 'http';
 import { WebSocketServer } from 'ws';
+import swaggerJsdoc from 'swagger-jsdoc';
+import swaggerUi from 'swagger-ui-express';
 
 import dataRoutes from './routes/dataRoutes.js';
 import commandRoutes from './routes/commandRoutes.js';
@@ -52,7 +54,7 @@ const dbConfig = {
     database: 'iot_dashboard',
 };
 
-const mqttBrokerUrl = 'mqtt://192.168.1.38:1883';
+const mqttBrokerUrl = 'mqtt://172.20.10.2:1883';
 const SENSOR_TOPIC = 'iot/sensor/data';
 const COMMAND_TOPIC = 'iot/led/control';
 const STATUS_TOPIC = 'iot/led/status';
@@ -62,10 +64,30 @@ let currentLedStatus = { led1: 'off', led2: 'off', led3: 'off' };
 const client = mqtt.connect(mqttBrokerUrl, {
     username: 'vui',
     password: '12345',
-    keepalive: 120,
+    keepalive: 10,
     reconnectPeriod: 1000,
     connectTimeout: 30 * 1000,
 });
+
+const swaggerOptions = {
+    swaggerDefinition: {
+        openapi: '3.0.0',
+        info: {
+            title: 'IOT Dashboard API',
+            version: '1.0.0',
+            description: 'API documentation for the IOT Dashboard',
+        },
+        servers: [
+            {
+                url: `http://localhost:${port}`,
+                description: 'Development server',
+            },
+        ],
+    },
+    apis: ['./routes/*.js'],
+};
+
+const swaggerDocs = swaggerJsdoc(swaggerOptions);
 
 async function startServer() {
     let db;
@@ -100,6 +122,12 @@ async function startServer() {
         broadcastMqttStatus();
     });
 
+    client.on('offline', () => {
+        console.log('MQTT client is offline');
+        isMqttConnected = false;
+        broadcastMqttStatus();
+    });
+
     client.on('error', (error) => {
         console.error('MQTT Connection Error:', error);
         isMqttConnected = false;
@@ -129,7 +157,6 @@ async function startServer() {
                 isEsp32DataConnected = true;
                 broadcastDataStatus();
             }
-
             try {
                 const sql = 'INSERT INTO sensor_readings (temperature, humidity, light) VALUES (?, ?, ?)';
                 await db.query(sql, [data.temperature, data.humidity, data.light]);
@@ -147,6 +174,7 @@ async function startServer() {
         }
     });
 
+    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
     app.use('/api/data', dataRoutes(db, currentLedStatus));
     app.use('/api/command', commandRoutes(db, client, COMMAND_TOPIC, () => isEsp32DataConnected));
     app.use('/api/actions', actionRoutes(db));
@@ -154,6 +182,7 @@ async function startServer() {
 
     server.listen(port, () => {
         console.log(`Backend server running at http://localhost:${port}`);
+        console.log(`API docs available at http://localhost:${port}/api-docs`);
     });
 }
 

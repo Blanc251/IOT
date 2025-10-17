@@ -3,6 +3,31 @@ import express from 'express';
 const router = express.Router();
 
 export default (db, client, COMMAND_TOPIC, isEsp32DataConnected) => {
+    /**
+     * @swagger
+     * /api/command:
+     *   post:
+     *     summary: Gửi lệnh điều khiển thiết bị
+     *     tags: [Lệnh]
+     *     description: Gửi một lệnh tới thiết bị thông qua MQTT.
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             properties:
+     *               command:
+     *                 type: string
+     *                 description: Lệnh điều khiển.
+     *     responses:
+     *       '200':
+     *         description: Gửi lệnh thành công.
+     *       '400':
+     *         description: Lệnh không được để trống.
+     *       '503':
+     *         description: Thiết bị đang ngắt kết nối.
+     */
     router.post('/', async (req, res) => {
         const { command } = req.body;
 
@@ -10,7 +35,7 @@ export default (db, client, COMMAND_TOPIC, isEsp32DataConnected) => {
             return res.status(400).json({ error: 'Command is required' });
         }
 
-        if (!isEsp32DataConnected) {
+        if (!isEsp32DataConnected()) {
             return res.status(503).json({ error: 'Device is disconnected. Cannot send command.' });
         }
 

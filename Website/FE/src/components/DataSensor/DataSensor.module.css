@@ -56,3 +56,27 @@
     color: var(--secondary-text-color);
     padding-top: 20px;
 }
+
+.controlsBar {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.searchBar {
+    flex-grow: 1;
+    position: relative;
+}
+
+.sortControls {
+    display: flex;
+    gap: 10px;
+}
+
+.sortControls select {
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    font-size: 1rem;
+    background-color: var(--card-bg-color);
+}

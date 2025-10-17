@@ -35,47 +35,61 @@ const initialChartData = {
     labels: [],
     datasets: [
         {
-            label: 'Temp (°C)',
+            label: 'Nhiệt độ (°C)',
             data: [],
             borderColor: 'rgba(255, 99, 132, 1)',
             backgroundColor: 'rgba(255, 99, 132, 0.2)',
             tension: 0.4,
             fill: true,
+            yAxisID: 'y',
         },
         {
-            label: 'Humidity (%)',
+            label: 'Độ ẩm (%)',
             data: [],
             borderColor: 'rgba(54, 162, 235, 1)',
             backgroundColor: 'rgba(54, 162, 235, 0.2)',
             tension: 0.4,
             fill: true,
+            yAxisID: 'y',
+        },
+        {
+            label: 'Ánh sáng (nits)',
+            data: [],
+            borderColor: 'rgba(255, 206, 86, 1)',
+            backgroundColor: 'rgba(255, 206, 86, 0.2)',
+            tension: 0.4,
+            fill: true,
+            yAxisID: 'y1',
         },
     ],
-};
-
-const initialLightChartData = {
-    labels: [],
-    datasets: [{
-        label: 'Light (nits)',
-        data: [],
-        borderColor: 'rgba(255, 206, 86, 1)',
-        backgroundColor: 'rgba(255, 206, 86, 0.2)',
-        tension: 0.4,
-        fill: true,
-    }]
 };
 
 const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: { legend: { position: 'top' } },
-    scales: { y: { beginAtZero: true } },
+    scales: {
+        y: {
+            type: 'linear',
+            display: true,
+            position: 'left',
+            beginAtZero: true
+        },
+        y1: {
+            type: 'linear',
+            display: true,
+            position: 'right',
+            beginAtZero: true,
+            grid: {
+                drawOnChartArea: false,
+            },
+        },
+    },
 };
 
 function Dashboard({ ledStatus, sendCommand, isEsp32DataConnected }) {
     const [sensorData, setSensorData] = useState({ temperature: 0, humidity: 0, light: 0 });
-    const [tempHumidityData, setTempHumidityData] = useState(initialChartData);
-    const [lightData, setLightData] = useState(initialLightChartData);
+    const [chartData, setChartData] = useState(initialChartData);
     const intervalRef = useRef(null);
 
     const fetchData = async () => {
@@ -87,27 +101,19 @@ function Dashboard({ ledStatus, sendCommand, isEsp32DataConnected }) {
 
                 const newLabel = new Date().toLocaleTimeString();
 
-                setTempHumidityData(prevData => {
+                setChartData(prevData => {
                     const labels = [...prevData.labels, newLabel].slice(-10);
                     const newTempData = [...prevData.datasets[0].data, temperature].slice(-10);
                     const newHumidityData = [...prevData.datasets[1].data, humidity].slice(-10);
+                    const newLightData = [...prevData.datasets[2].data, light].slice(-10);
                     return {
                         ...prevData,
                         labels,
                         datasets: [
                             { ...prevData.datasets[0], data: newTempData },
                             { ...prevData.datasets[1], data: newHumidityData },
+                            { ...prevData.datasets[2], data: newLightData },
                         ]
-                    };
-                });
-
-                setLightData(prevData => {
-                    const labels = [...prevData.labels, newLabel].slice(-10);
-                    const newLightData = [...prevData.datasets[0].data, light].slice(-10);
-                    return {
-                        ...prevData,
-                        labels,
-                        datasets: [{ ...prevData.datasets[0], data: newLightData }]
                     };
                 });
             }
@@ -144,7 +150,6 @@ function Dashboard({ ledStatus, sendCommand, isEsp32DataConnected }) {
 
             <div className={styles.summaryCardsContainer}>
                 <SummaryCard
-
                     title="Nhiệt độ"
                     value={sensorData.temperature}
                     unit="°C"
@@ -152,7 +157,6 @@ function Dashboard({ ledStatus, sendCommand, isEsp32DataConnected }) {
                     statusType="normal"
                 />
                 <SummaryCard
-
                     title="Độ ẩm"
                     value={sensorData.humidity}
                     unit="%"
@@ -160,7 +164,6 @@ function Dashboard({ ledStatus, sendCommand, isEsp32DataConnected }) {
                     statusType="high"
                 />
                 <SummaryCard
-
                     title="Ánh sáng"
                     value={sensorData.light}
                     unit="nits"
@@ -171,15 +174,9 @@ function Dashboard({ ledStatus, sendCommand, isEsp32DataConnected }) {
 
             <div className={styles.chartsContainer}>
                 <div className={styles.chartCard}>
-                    <h3>Nhiệt độ & Độ ẩm</h3>
+                    <h3>Thông số môi trường</h3>
                     <div className={styles.chartWrapper}>
-                        <Line options={chartOptions} data={tempHumidityData} />
-                    </div>
-                </div>
-                <div className={styles.chartCard}>
-                    <h3>Ánh sáng</h3>
-                    <div className={styles.chartWrapper}>
-                        <Line options={chartOptions} data={lightData} />
+                        <Line options={chartOptions} data={chartData} />
                     </div>
                 </div>
             </div>

@@ -20,7 +20,7 @@
 
 .chartsContainer {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: var(--main-spacing);
     flex-grow: 1;
     min-height: 0;
