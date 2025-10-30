@@ -17,8 +17,9 @@
 }
 
 .searchBar {
+    flex-grow: 1;
     position: relative;
-    margin-bottom: 20px;
+    display: flex;
 }
 
 .searchIcon {
@@ -61,19 +62,17 @@
     display: flex;
     gap: 16px;
     margin-bottom: 20px;
-}
-
-.searchBar {
-    flex-grow: 1;
-    position: relative;
+    align-items: stretch;
 }
 
 .sortControls {
     display: flex;
     gap: 10px;
+    flex-grow: 1;
 }
 
 .sortControls select {
+    flex: 1;
     padding: 12px;
     border-radius: 8px;
     border: 1px solid var(--border-color);

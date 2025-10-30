@@ -1,3 +1,5 @@
+// file: routes/dataRoutes.js
+
 import express from 'express';
 
 const router = express.Router();
@@ -69,7 +71,7 @@ export default (db, currentLedStatus) => {
     router.get('/history', async (req, res) => {
         try {
             const page = parseInt(req.query.page) || 1;
-            const limit = 10;
+            const limit = 13;
             const offset = (page - 1) * limit;
             const search = req.query.search || '';
 
@@ -85,8 +87,15 @@ export default (db, currentLedStatus) => {
             let values = [];
 
             if (search) {
-                searchClause = 'WHERE created_at LIKE ?';
-                values.push(`%${search}%`);
+                searchClause = `
+                    WHERE CAST(id AS CHAR) LIKE ?
+                       OR CAST(temperature AS CHAR) LIKE ?
+                       OR CAST(humidity AS CHAR) LIKE ?
+                       OR CAST(light AS CHAR) LIKE ?
+                       OR DATE_FORMAT(created_at, '%d/%m/%Y, %H:%i:%s') LIKE ?
+                `;
+                const searchTerm = `%${search}%`;
+                values.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
             }
 
             const countSql = `SELECT COUNT(*) AS totalItems FROM sensor_readings ${searchClause}`;
@@ -101,8 +110,8 @@ export default (db, currentLedStatus) => {
                 LIMIT ? OFFSET ?
             `;
 
-            values.push(limit, offset);
-            const [data] = await db.query(dataSql, values);
+            const queryValues = [...values, limit, offset];
+            const [data] = await db.query(dataSql, queryValues);
 
             res.json({
                 totalItems,

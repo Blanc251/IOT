@@ -35,7 +35,7 @@ const initialChartData = {
     labels: [],
     datasets: [
         {
-            label: 'Nhiệt độ (°C)',
+            label: 'Temperature (°C)',
             data: [],
             borderColor: 'rgba(255, 99, 132, 1)',
             backgroundColor: 'rgba(255, 99, 132, 0.2)',
@@ -44,7 +44,7 @@ const initialChartData = {
             yAxisID: 'y',
         },
         {
-            label: 'Độ ẩm (%)',
+            label: 'Humidity (%)',
             data: [],
             borderColor: 'rgba(54, 162, 235, 1)',
             backgroundColor: 'rgba(54, 162, 235, 0.2)',
@@ -53,7 +53,7 @@ const initialChartData = {
             yAxisID: 'y',
         },
         {
-            label: 'Ánh sáng (nits)',
+            label: 'Light (nits)',
             data: [],
             borderColor: 'rgba(255, 206, 86, 1)',
             backgroundColor: 'rgba(255, 206, 86, 0.2)',
@@ -150,21 +150,21 @@ function Dashboard({ ledStatus, sendCommand, isEsp32DataConnected }) {
 
             <div className={styles.summaryCardsContainer}>
                 <SummaryCard
-                    title="Nhiệt độ"
+                    title="Temperature"
                     value={sensorData.temperature}
                     unit="°C"
                     status="Normal"
                     statusType="normal"
                 />
                 <SummaryCard
-                    title="Độ ẩm"
+                    title="Humidity"
                     value={sensorData.humidity}
                     unit="%"
                     status="High"
                     statusType="high"
                 />
                 <SummaryCard
-                    title="Ánh sáng"
+                    title="Light"
                     value={sensorData.light}
                     unit="nits"
                     status="Bright"
@@ -174,7 +174,7 @@ function Dashboard({ ledStatus, sendCommand, isEsp32DataConnected }) {
 
             <div className={styles.chartsContainer}>
                 <div className={styles.chartCard}>
-                    <h3>Thông số môi trường</h3>
+                    <h3>Environmental Parameters</h3>
                     <div className={styles.chartWrapper}>
                         <Line options={chartOptions} data={chartData} />
                     </div>

@@ -20,7 +20,7 @@ function DeviceControls({ ledStatus, sendCommand, isEsp32DataConnected }) {
 
     return (
         <div className={styles.controlsCard}>
-            <h3>Thiết bị</h3>
+            <h3>Devices</h3>
             <div className={styles.deviceList}>
                 <div className={styles.deviceItem}>
                     <span>FAN</span>

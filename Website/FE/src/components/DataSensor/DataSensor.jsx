@@ -1,3 +1,5 @@
+// file: src/components/DataSensor/DataSensor.jsx
+
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import Pagination from '../Pagination/Pagination';
@@ -25,6 +27,7 @@ const formatSearchTerm = (term) => {
 };
 
 const API_URL = 'http://localhost:3001/api';
+const ITEMS_PER_PAGE = 13;
 
 function DataSensor({ isEsp32DataConnected }) {
     const [history, setHistory] = useState([]);
@@ -37,14 +40,6 @@ function DataSensor({ isEsp32DataConnected }) {
     const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'descending' });
 
     const fetchHistory = useCallback(async () => {
-        if (!isEsp32DataConnected) {
-            setHistory([]);
-            setTotalPages(0);
-            setTotalItems(0);
-            setItemsRange({ start: 0, end: 0 });
-            return;
-        }
-
         try {
             const formattedSearch = formatSearchTerm(debouncedSearchTerm);
             const response = await axios.get(`${API_URL}/data/history`, {
@@ -60,13 +55,17 @@ function DataSensor({ isEsp32DataConnected }) {
             setTotalPages(totalPages);
             setTotalItems(totalItems);
 
-            const start = (currentPage - 1) * 10 + 1;
+            const start = (currentPage - 1) * ITEMS_PER_PAGE + 1;
             const end = start + data.length - 1;
             setItemsRange({ start, end });
         } catch (error) {
             console.error('Error fetching historical data:', error);
+            setHistory([]);
+            setTotalPages(0);
+            setTotalItems(0);
+            setItemsRange({ start: 0, end: 0 });
         }
-    }, [currentPage, debouncedSearchTerm, isEsp32DataConnected, sortConfig]);
+    }, [currentPage, debouncedSearchTerm, sortConfig]);
 
     useEffect(() => {
         fetchHistory();
@@ -95,21 +94,20 @@ function DataSensor({ isEsp32DataConnected }) {
                     <BsSearch className={styles.searchIcon} />
                     <input
                         type="text"
-                        placeholder="Search by date (DD/MM/YYYY) or time (HH:mm)"
+                        placeholder="Search by ID, temp, humidity, light, or date/time"
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
-                        disabled={!isEsp32DataConnected}
                     />
                 </div>
                 <div className={styles.sortControls}>
-                    <select value={sortConfig.key} onChange={e => setSortConfig({ ...sortConfig, key: e.target.value })} disabled={!isEsp32DataConnected}>
+                    <select value={sortConfig.key} onChange={e => setSortConfig({ ...sortConfig, key: e.target.value })}>
                         <option value="created_at">Sort by Time</option>
                         <option value="id">Sort by ID</option>
                         <option value="temperature">Sort by Temperature</option>
                         <option value="humidity">Sort by Humidity</option>
                         <option value="light">Sort by Light</option>
                     </select>
-                    <select value={sortConfig.direction} onChange={e => setSortConfig({ ...sortConfig, direction: e.target.value })} disabled={!isEsp32DataConnected}>
+                    <select value={sortConfig.direction} onChange={e => setSortConfig({ ...sortConfig, direction: e.target.value })}>
                         <option value="ascending">Ascending</option>
                         <option value="descending">Descending</option>
                     </select>
@@ -139,7 +137,7 @@ function DataSensor({ isEsp32DataConnected }) {
                         )) : (
                             <tr>
                                 <td colSpan="5" style={{ textAlign: 'center', padding: '20px', color: 'var(--secondary-text-color)' }}>
-                                    {isEsp32DataConnected ? 'No data found' : 'Device disconnected. Connect the device to view history.'}
+                                    {isEsp32DataConnected ? 'No data found' : 'No data found (device may be disconnected)'}
                                 </td>
                             </tr>
                         )}
@@ -149,9 +147,9 @@ function DataSensor({ isEsp32DataConnected }) {
 
             <div className={styles.paginationFooter}>
                 <span>
-                    {isEsp32DataConnected && totalItems > 0
+                    {totalItems > 0
                         ? `Displaying ${itemsRange.start}-${itemsRange.end} of ${totalItems} results`
-                        : (isEsp32DataConnected ? 'No data available.' : 'Device disconnected. Connect the device to view history.')}
+                        : 'No data available.'}
                 </span>
                 <Pagination
                     currentPage={currentPage}

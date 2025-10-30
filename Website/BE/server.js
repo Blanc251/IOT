@@ -54,7 +54,7 @@ const dbConfig = {
     database: 'iot_dashboard',
 };
 
-const mqttBrokerUrl = 'mqtt://172.20.10.2:1883';
+const mqttBrokerUrl = 'mqtt://172.17.118.87:1883';
 const SENSOR_TOPIC = 'iot/sensor/data';
 const COMMAND_TOPIC = 'iot/led/control';
 const STATUS_TOPIC = 'iot/led/status';

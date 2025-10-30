@@ -1,6 +1,6 @@
 import React from 'react';
 import styles from './Profile.module.css';
-import { BsEnvelope, BsPhone, BsGithub, BsGeoAlt } from 'react-icons/bs';
+import { BsEnvelope, BsPhone, BsGithub, BsGeoAlt, BsBook } from 'react-icons/bs';
 
 function Profile() {
     return (
@@ -27,13 +27,37 @@ function Profile() {
                             <span className={styles.value}>0865432424</span>
                         </div>
                     </div>
+
                     <div className={styles.infoRow}>
                         <BsGithub className={styles.icon} />
                         <div className={styles.infoText}>
                             <span className={styles.label}>GitHub</span>
-                            <span className={styles.value}>Blanc251</span>
+                            <a className={styles.valueLink} href="https://github.com/Blanc251/IOT" target="_blank" rel="noopener noreferrer">
+                                Blanc251
+                            </a>
                         </div>
                     </div>
+
+                    <div className={styles.infoRow}>
+                        <BsBook className={styles.icon} />
+                        <div className={styles.infoText}>
+                            <span className={styles.label}>Read API Docs</span>
+                            <a className={styles.valueLink} href="http://localhost:3001/api-docs" target="_blank" rel="noopener noreferrer">
+                                Swagger API
+                            </a>
+                        </div>
+                    </div>
+
+                    <div className={styles.infoRow}>
+                        <BsBook className={styles.icon} />
+                        <div className={styles.infoText}>
+                            <span className={styles.label}>Read Project Docs</span>
+                            <a className={styles.valueLink} href="https://github.com/Blanc251/IOT/blob/main/VuDucVui_B22DCCN921_IOT.pdf" target="_blank" rel="noopener noreferrer">
+                                Project Document (PDF)
+                            </a>
+                        </div>
+                    </div>
+
                     <div className={styles.infoRow}>
                         <BsGeoAlt className={styles.icon} />
                         <div className={styles.infoText}>

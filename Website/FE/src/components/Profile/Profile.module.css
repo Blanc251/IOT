@@ -82,3 +82,16 @@
     font-weight: 500;
     color: var(--text-color);
 }
+
+.valueLink {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.valueLink:hover {
+    text-decoration: underline;
+    color: #0b5ed7;
+}
