@@ -20,29 +20,39 @@ const wss = new WebSocketServer({ server });
 
 let isMqttConnected = false;
 let isEsp32DataConnected = false;
-let lastDataTimestamp = 0;
-const DATA_TIMEOUT = 10000;
+let currentLedStatus = { led1: 'off', led2: 'off', led3: 'off' };
+let currentSensorData = {};
+
+function broadcastToAll(message) {
+    wss.clients.forEach((client) => {
+        if (client.readyState === client.OPEN) {
+            client.send(JSON.stringify(message));
+        }
+    });
+}
+
+function broadcastMqttStatus() {
+    broadcastToAll({ type: 'MQTT_STATUS', isConnected: isMqttConnected });
+}
+
+function broadcastDataStatus() {
+    broadcastToAll({ type: 'DATA_STATUS', isConnected: isEsp32DataConnected });
+}
+
+function broadcastSensorData(data) {
+    broadcastToAll({ type: 'SENSOR_DATA', data });
+}
+
+function broadcastLedStatus(status) {
+    broadcastToAll({ type: 'LED_STATUS', data: status });
+}
 
 wss.on('connection', (ws) => {
     ws.send(JSON.stringify({ type: 'MQTT_STATUS', isConnected: isMqttConnected }));
     ws.send(JSON.stringify({ type: 'DATA_STATUS', isConnected: isEsp32DataConnected }));
+    ws.send(JSON.stringify({ type: 'LED_STATUS', data: currentLedStatus }));
+    ws.send(JSON.stringify({ type: 'SENSOR_DATA', data: currentSensorData }));
 });
-
-function broadcastMqttStatus() {
-    wss.clients.forEach((client) => {
-        if (client.readyState === client.OPEN) {
-            client.send(JSON.stringify({ type: 'MQTT_STATUS', isConnected: isMqttConnected }));
-        }
-    });
-}
-
-function broadcastDataStatus() {
-    wss.clients.forEach((client) => {
-        if (client.readyState === client.OPEN) {
-            client.send(JSON.stringify({ type: 'DATA_STATUS', isConnected: isEsp32DataConnected }));
-        }
-    });
-}
 
 app.use(cors());
 app.use(express.json());
@@ -58,8 +68,7 @@ const mqttBrokerUrl = 'mqtt://172.17.118.87:1883';
 const SENSOR_TOPIC = 'iot/sensor/data';
 const COMMAND_TOPIC = 'iot/led/control';
 const STATUS_TOPIC = 'iot/led/status';
-
-let currentLedStatus = { led1: 'off', led2: 'off', led3: 'off' };
+const ESP32_STATUS_TOPIC = 'iot/esp32/status';
 
 const client = mqtt.connect(mqttBrokerUrl, {
     username: 'vui',
@@ -103,9 +112,9 @@ async function startServer() {
         console.log('Connected to MQTT Broker');
         isMqttConnected = true;
         broadcastMqttStatus();
-        client.subscribe([SENSOR_TOPIC, STATUS_TOPIC], (err) => {
+        client.subscribe([SENSOR_TOPIC, STATUS_TOPIC, ESP32_STATUS_TOPIC], (err) => {
             if (!err) {
-                console.log('Subscribed to topics:', SENSOR_TOPIC, STATUS_TOPIC);
+                console.log('Subscribed to topics:', SENSOR_TOPIC, STATUS_TOPIC, ESP32_STATUS_TOPIC);
             }
         });
     });
@@ -135,28 +144,23 @@ async function startServer() {
         client.end();
     });
 
-    function checkDataConnection() {
-        const timeSinceLastData = Date.now() - lastDataTimestamp;
-        const currentlyConnected = timeSinceLastData < DATA_TIMEOUT;
-
-        if (isEsp32DataConnected !== currentlyConnected) {
-            isEsp32DataConnected = currentlyConnected;
-            console.log(`ESP32 Data Connection status changed: ${isEsp32DataConnected ? 'Connected' : 'Disconnected'}`);
-            broadcastDataStatus();
-        }
-    }
-
-    setInterval(checkDataConnection, 5000);
-
     client.on('message', async (topic, message) => {
-        const data = JSON.parse(message.toString());
 
-        if (topic === SENSOR_TOPIC) {
-            lastDataTimestamp = Date.now();
-            if (!isEsp32DataConnected) {
-                isEsp32DataConnected = true;
+        if (topic === ESP32_STATUS_TOPIC) {
+            const status = message.toString();
+            const newConnectionState = (status === 'online');
+
+            if (isEsp32DataConnected !== newConnectionState) {
+                isEsp32DataConnected = newConnectionState;
+                console.log(`ESP32 Connection status changed: ${status}`);
                 broadcastDataStatus();
             }
+        }
+
+        if (topic === SENSOR_TOPIC) {
+            const data = JSON.parse(message.toString());
+            currentSensorData = data;
+            broadcastSensorData(data);
             try {
                 const sql = 'INSERT INTO sensor_readings (temperature, humidity, light) VALUES (?, ?, ?)';
                 await db.query(sql, [data.temperature, data.humidity, data.light]);
@@ -166,11 +170,13 @@ async function startServer() {
         }
 
         if (topic === STATUS_TOPIC) {
-            if (data?.led && ['on', 'off'].includes(data.status)) {
-                if (currentLedStatus.hasOwnProperty(data.led)) {
-                    currentLedStatus[data.led] = data.status;
-                }
-            }
+            const data = JSON.parse(message.toString());
+            currentLedStatus = { ...currentLedStatus, ...data };
+
+            // THÊM ĐỘ TRỄ NHÂN TẠO 2 GIÂY TẠI ĐÂY
+            setTimeout(() => {
+                broadcastLedStatus(currentLedStatus);
+            }, 2000); // 2000ms = 2 giây
         }
     });
 

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
 import SummaryCard from '../SummaryCard/SummaryCard';
 import DeviceControls from '../DeviceControl/DeviceControls';
 
@@ -28,8 +27,6 @@ ChartJS.register(
     Legend,
     Filler
 );
-
-const API_URL = 'http://localhost:3001/api';
 
 const initialChartData = {
     labels: [],
@@ -87,57 +84,31 @@ const chartOptions = {
     },
 };
 
-function Dashboard({ ledStatus, sendCommand, isEsp32DataConnected }) {
-    const [sensorData, setSensorData] = useState({ temperature: 0, humidity: 0, light: 0 });
+function Dashboard({ sensorData, ledStatus, sendCommand, isEsp32DataConnected, deviceLoading }) {
     const [chartData, setChartData] = useState(initialChartData);
-    const intervalRef = useRef(null);
-
-    const fetchData = async () => {
-        try {
-            const response = await axios.get(`${API_URL}/data`);
-            if (response.data.sensors) {
-                const { temperature, humidity, light } = response.data.sensors;
-                setSensorData({ temperature, humidity, light });
-
-                const newLabel = new Date().toLocaleTimeString();
-
-                setChartData(prevData => {
-                    const labels = [...prevData.labels, newLabel].slice(-10);
-                    const newTempData = [...prevData.datasets[0].data, temperature].slice(-10);
-                    const newHumidityData = [...prevData.datasets[1].data, humidity].slice(-10);
-                    const newLightData = [...prevData.datasets[2].data, light].slice(-10);
-                    return {
-                        ...prevData,
-                        labels,
-                        datasets: [
-                            { ...prevData.datasets[0], data: newTempData },
-                            { ...prevData.datasets[1], data: newHumidityData },
-                            { ...prevData.datasets[2], data: newLightData },
-                        ]
-                    };
-                });
-            }
-        } catch (error) {
-            console.error("Error fetching data:", error);
-        }
-    };
-
-    const startPolling = () => {
-        if (intervalRef.current) clearInterval(intervalRef.current);
-        intervalRef.current = setInterval(fetchData, 3000);
-    };
 
     useEffect(() => {
-        if (isEsp32DataConnected) {
-            fetchData();
-            startPolling();
-        } else {
-            if (intervalRef.current) clearInterval(intervalRef.current);
-        }
-        return () => {
-            if (intervalRef.current) clearInterval(intervalRef.current);
-        };
-    }, [isEsp32DataConnected]);
+        if (!sensorData || typeof sensorData.temperature === 'undefined') return;
+
+        const { temperature, humidity, light } = sensorData;
+        const newLabel = new Date().toLocaleTimeString();
+
+        setChartData(prevData => {
+            const labels = [...prevData.labels, newLabel].slice(-10);
+            const newTempData = [...prevData.datasets[0].data, temperature].slice(-10);
+            const newHumidityData = [...prevData.datasets[1].data, humidity].slice(-10);
+            const newLightData = [...prevData.datasets[2].data, light].slice(-10);
+            return {
+                ...prevData,
+                labels,
+                datasets: [
+                    { ...prevData.datasets[0], data: newTempData },
+                    { ...prevData.datasets[1], data: newHumidityData },
+                    { ...prevData.datasets[2], data: newLightData },
+                ]
+            };
+        });
+    }, [sensorData]);
 
     return (
         <div className={styles.dashboardContentWrapper}>
@@ -151,21 +122,21 @@ function Dashboard({ ledStatus, sendCommand, isEsp32DataConnected }) {
             <div className={styles.summaryCardsContainer}>
                 <SummaryCard
                     title="Temperature"
-                    value={sensorData.temperature}
+                    value={sensorData?.temperature || 0}
                     unit="°C"
                     status="Normal"
                     statusType="normal"
                 />
                 <SummaryCard
                     title="Humidity"
-                    value={sensorData.humidity}
+                    value={sensorData?.humidity || 0}
                     unit="%"
                     status="High"
                     statusType="high"
                 />
                 <SummaryCard
                     title="Light"
-                    value={sensorData.light}
+                    value={sensorData?.light || 0}
                     unit="nits"
                     status="Bright"
                     statusType="bright"
@@ -181,7 +152,12 @@ function Dashboard({ ledStatus, sendCommand, isEsp32DataConnected }) {
                 </div>
             </div>
 
-            <DeviceControls ledStatus={ledStatus} sendCommand={sendCommand} isEsp32DataConnected={isEsp32DataConnected} />
+            <DeviceControls
+                ledStatus={ledStatus}
+                sendCommand={sendCommand}
+                isEsp32DataConnected={isEsp32DataConnected}
+                deviceLoading={deviceLoading}
+            />
         </div>
     );
 }
