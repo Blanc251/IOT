@@ -64,6 +64,8 @@ function App() {
       setDeviceLoading(prev => ({ ...prev, [ledName]: true }));
     }
 
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     try {
       await axios.post(`${API_URL}/command`, { command });
     } catch (error) {

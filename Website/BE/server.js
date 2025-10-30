@@ -172,11 +172,7 @@ async function startServer() {
         if (topic === STATUS_TOPIC) {
             const data = JSON.parse(message.toString());
             currentLedStatus = { ...currentLedStatus, ...data };
-
-            // THÊM ĐỘ TRỄ NHÂN TẠO 2 GIÂY TẠI ĐÂY
-            setTimeout(() => {
-                broadcastLedStatus(currentLedStatus);
-            }, 2000); // 2000ms = 2 giây
+            broadcastLedStatus(currentLedStatus);
         }
     });
 

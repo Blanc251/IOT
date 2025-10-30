@@ -1,6 +1,5 @@
-// file: src/components/DataSensor/DataSensor.jsx
-
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import Pagination from '../Pagination/Pagination';
 import { BsSearch } from 'react-icons/bs';
@@ -22,32 +21,38 @@ function useDebounce(value, delay) {
     return debouncedValue;
 }
 
-const formatSearchTerm = (term) => {
-    return term.trim();
-};
-
 const API_URL = 'http://localhost:3001/api';
 const ITEMS_PER_PAGE = 13;
 
 function DataSensor({ isEsp32DataConnected }) {
     const [history, setHistory] = useState([]);
-    const [currentPage, setCurrentPage] = useState(1);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const currentPage = parseInt(searchParams.get('page') || '1', 10);
+
     const [totalPages, setTotalPages] = useState(0);
     const [totalItems, setTotalItems] = useState(0);
     const [itemsRange, setItemsRange] = useState({ start: 0, end: 0 });
-    const [searchTerm, setSearchTerm] = useState('');
+
+    const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
     const debouncedSearchTerm = useDebounce(searchTerm, 500);
-    const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'descending' });
+    const [sortConfig, setSortConfig] = useState({
+        key: searchParams.get('sortKey') || 'created_at',
+        direction: searchParams.get('sortDirection') || 'descending'
+    });
 
     const fetchHistory = useCallback(async () => {
         try {
-            const formattedSearch = formatSearchTerm(debouncedSearchTerm);
+            const page = parseInt(searchParams.get('page') || '1', 10);
+            const search = searchParams.get('search') || '';
+            const sortKey = searchParams.get('sortKey') || 'created_at';
+            const sortDirection = searchParams.get('sortDirection') || 'descending';
+
             const response = await axios.get(`${API_URL}/data/history`, {
                 params: {
-                    page: currentPage,
-                    search: formattedSearch,
-                    sortKey: sortConfig.key,
-                    sortDirection: sortConfig.direction,
+                    page: page,
+                    search: search,
+                    sortKey: sortKey,
+                    sortDirection: sortDirection,
                 }
             });
             const { data, totalPages, totalItems } = response.data;
@@ -55,7 +60,7 @@ function DataSensor({ isEsp32DataConnected }) {
             setTotalPages(totalPages);
             setTotalItems(totalItems);
 
-            const start = (currentPage - 1) * ITEMS_PER_PAGE + 1;
+            const start = (page - 1) * ITEMS_PER_PAGE + 1;
             const end = start + data.length - 1;
             setItemsRange({ start, end });
         } catch (error) {
@@ -65,18 +70,30 @@ function DataSensor({ isEsp32DataConnected }) {
             setTotalItems(0);
             setItemsRange({ start: 0, end: 0 });
         }
-    }, [currentPage, debouncedSearchTerm, sortConfig]);
+    }, [searchParams]);
 
     useEffect(() => {
         fetchHistory();
     }, [fetchHistory]);
 
     useEffect(() => {
-        setCurrentPage(1);
+        const newSearchParams = new URLSearchParams(searchParams);
+
+        newSearchParams.set('search', searchTerm.trim());
+        newSearchParams.set('sortKey', sortConfig.key);
+        newSearchParams.set('sortDirection', sortConfig.direction);
+
+        if (parseInt(searchParams.get('page') || '1', 10) !== 1) {
+            newSearchParams.set('page', '1');
+        }
+
+        setSearchParams(newSearchParams, { replace: true });
     }, [debouncedSearchTerm, sortConfig]);
 
-    const handlePageChange = (page) => {
-        setCurrentPage(page);
+    const handlePageChange = (newPage) => {
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.set('page', newPage.toString());
+        setSearchParams(newSearchParams);
     };
 
     const getFormattedDate = (timestamp) => {
@@ -132,7 +149,7 @@ function DataSensor({ isEsp32DataConnected }) {
                                 <td>{record.temperature}</td>
                                 <td>{record.humidity}</td>
                                 <td>{record.light}</td>
-                                <td>{getFormattedDate(record.created_at)}</td>
+                                Z<td>{getFormattedDate(record.created_at)}</td>
                             </tr>
                         )) : (
                             <tr>

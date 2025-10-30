@@ -14,15 +14,29 @@
     display: flex;
     gap: 16px;
     align-items: center;
-    background-color: var(--card-bg-color);
     padding: 16px;
     border-radius: 12px;
+    background-color: var(--card-bg-color);
     box-shadow: 0 4px 20px var(--shadow-color);
 }
 
-.filterBar select,
-.filterBar input {
-    padding: 10px 12px;
+.searchBar {
+    flex-grow: 1;
+    position: relative;
+    display: flex;
+}
+
+.searchIcon {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--secondary-text-color);
+}
+
+.searchBar input {
+    width: 100%;
+    padding: 10px 12px 10px 40px;
     border-radius: 8px;
     border: 1px solid var(--border-color);
     font-size: 0.95rem;
@@ -30,24 +44,15 @@
     background-color: #fff;
 }
 
-.filterBar input {
-    flex-grow: 1;
-}
 
-.filterBar button {
-    padding: 10px 24px;
-    border: none;
+.filterBar select {
+    padding: 10px 12px;
     border-radius: 8px;
-    background-color: var(--primary-color);
-    color: white;
+    border: 1px solid var(--border-color);
     font-size: 0.95rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.filterBar button:hover {
-    background-color: #0b5ed7;
+    font-family: 'Poppins', sans-serif;
+    background-color: #fff;
+    min-width: 150px;
 }
 
 .tableCard {
@@ -56,6 +61,23 @@
     box-shadow: 0 4px 20px var(--shadow-color);
     padding: 10px 20px;
 }
+
+.tableCard th,
+.tableCard td {
+    padding: 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.tableCard th {
+    font-weight: 500;
+    color: var(--secondary-text-color);
+}
+
+.tableCard tbody tr:last-child td {
+    border-bottom: none;
+}
+
 
 .actionBadge {
     font-weight: 600;

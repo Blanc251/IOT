@@ -30,18 +30,64 @@ export default (db) => {
      */
     router.get('/history', async (req, res) => {
         try {
-            const sortKey = req.query.sortKey || 'id';
+            const page = parseInt(req.query.page) || 1;
+            const limit = 13; // Matches ITEMS_PER_PAGE in frontend
+            const offset = (page - 1) * limit;
+
+            const search = req.query.search || '';
+            const filterDevice = req.query.device || 'all';
+            const filterAction = req.query.action || 'all';
+
+            const sortKey = req.query.sortKey || 'created_at';
             const sortDirection = req.query.sortDirection === 'ascending' ? 'ASC' : 'DESC';
 
-            const allowedSortKeys = ['id', 'device', 'action', 'created_at'];
+            const allowedSortKeys = ['id', 'created_at'];
             if (!allowedSortKeys.includes(sortKey)) {
                 return res.status(400).json({ error: 'Invalid sort key' });
             }
 
-            const sql = `SELECT * FROM action_logs ORDER BY ${sortKey} ${sortDirection}`;
-            const [actions] = await db.query(sql);
+            let filterConditions = [];
+            let values = [];
 
-            res.json(actions);
+            if (filterDevice && filterDevice !== 'all') {
+                filterConditions.push('device = ?');
+                values.push(filterDevice);
+            }
+
+            if (filterAction && filterAction !== 'all') {
+                filterConditions.push('action = ?');
+                values.push(filterAction);
+            }
+
+            if (search) {
+                filterConditions.push(`(CAST(id AS CHAR) LIKE ? OR DATE_FORMAT(created_at, '%d/%m/%Y, %H:%i:%s') LIKE ?)`);
+                const searchTerm = `%${search}%`;
+                values.push(searchTerm, searchTerm);
+            }
+
+            const filterClause = filterConditions.length > 0 ? `WHERE ${filterConditions.join(' AND ')}` : '';
+
+            const countSql = `SELECT COUNT(*) AS totalItems FROM action_logs ${filterClause}`;
+            const [[{ totalItems }]] = await db.query(countSql, values);
+
+            const totalPages = Math.ceil(totalItems / limit);
+
+            const dataSql = `
+                SELECT * FROM action_logs
+                ${filterClause}
+                ORDER BY ${sortKey} ${sortDirection}
+                LIMIT ? OFFSET ?
+            `;
+
+            const queryValues = [...values, limit, offset];
+            const [data] = await db.query(dataSql, queryValues);
+
+            res.json({
+                totalItems,
+                totalPages,
+                currentPage: page,
+                data,
+            });
         } catch (error) {
             console.error('Error fetching action history:', error.message);
             res.status(500).json({ error: 'Failed to fetch action history' });
