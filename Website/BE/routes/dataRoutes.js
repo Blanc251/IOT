@@ -76,35 +76,62 @@ export default (db, currentLedStatus) => {
             const sortKey = req.query.sortKey || 'created_at';
             const sortDirection = req.query.sortDirection === 'ascending' ? 'ASC' : 'DESC';
 
-            const allowedSortKeys = ['id', 'temperature', 'humidity', 'light', 'created_at'];
+            const allowedSortKeys = ['all', 'temperature', 'humidity', 'light', 'created_at'];
             if (!allowedSortKeys.includes(sortKey)) {
                 return res.status(400).json({ error: 'Invalid sort key' });
             }
 
-            let searchClause = '';
+            let filterConditions = [];
             let values = [];
 
             if (search) {
-                searchClause = `
-                    WHERE CAST(id AS CHAR) LIKE ?
-                       OR CAST(temperature AS CHAR) LIKE ?
-                       OR CAST(humidity AS CHAR) LIKE ?
-                       OR CAST(light AS CHAR) LIKE ?
-                       OR DATE_FORMAT(created_at, '%d/%m/%Y, %H:%i:%s') LIKE ?
-                `;
                 const searchTerm = `%${search}%`;
-                values.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
+                switch (sortKey) {
+                    case 'all':
+                        filterConditions.push(`(
+                            CAST(id AS CHAR) LIKE ? OR
+                            CAST(temperature AS CHAR) LIKE ? OR
+                            CAST(humidity AS CHAR) LIKE ? OR
+                            CAST(light AS CHAR) LIKE ? OR
+                            DATE_FORMAT(created_at, '%d/%m/%Y, %H:%i:%s') LIKE ?
+                        )`);
+                        values.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
+                        break;
+                    case 'temperature':
+                        filterConditions.push('CAST(temperature AS CHAR) LIKE ?');
+                        values.push(searchTerm);
+                        break;
+                    case 'humidity':
+                        filterConditions.push('CAST(humidity AS CHAR) LIKE ?');
+                        values.push(searchTerm);
+                        break;
+                    case 'light':
+                        filterConditions.push('CAST(light AS CHAR) LIKE ?');
+                        values.push(searchTerm);
+                        break;
+                    case 'created_at':
+                        filterConditions.push("DATE_FORMAT(created_at, '%d/%m/%Y, %H:%i:%s') LIKE ?");
+                        values.push(searchTerm);
+                        break;
+                    default:
+                        break;
+                }
             }
 
-            const countSql = `SELECT COUNT(*) AS totalItems FROM sensor_readings ${searchClause}`;
+            const filterClause = filterConditions.length > 0 ? `WHERE ${filterConditions.join(' AND ')}` : '';
+
+            const countSql = `SELECT COUNT(*) AS totalItems FROM sensor_readings ${filterClause}`;
             const [[{ totalItems }]] = await db.query(countSql, values);
 
             const totalPages = Math.ceil(totalItems / limit);
 
+            const finalSortKey = sortKey === 'all' ? 'created_at' : sortKey;
+            const finalSortDirection = sortKey === 'all' ? 'DESC' : sortDirection;
+
             const dataSql = `
                 SELECT * FROM sensor_readings
-                ${searchClause}
-                ORDER BY ${sortKey} ${sortDirection}
+                ${filterClause}
+                ORDER BY ${finalSortKey} ${finalSortDirection}
                 LIMIT ? OFFSET ?
             `;
 

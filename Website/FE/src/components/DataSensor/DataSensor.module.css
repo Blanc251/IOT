@@ -89,3 +89,12 @@
     color: var(--secondary-text-color);
     padding: 10px 0;
 }
+
+.timeCell {
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.timeCell:hover {
+    color: var(--primary-color);
+}

@@ -24,6 +24,11 @@ function useDebounce(value, delay) {
     return debouncedValue;
 }
 
+const searchPlaceholders = {
+    all: 'Search by ID or Time',
+    created_at: 'Search by date/time (dd/mm/yyyy, hh:ii:ss)'
+};
+
 function ActionHistory({ isEsp32DataConnected }) {
     const [actions, setActions] = useState([]);
     const [searchParams, setSearchParams] = useSearchParams();
@@ -110,6 +115,12 @@ function ActionHistory({ isEsp32DataConnected }) {
         return new Date(timestamp).toLocaleString('en-GB', { hour12: false });
     };
 
+    const handleCopyClick = (textToCopy) => {
+        navigator.clipboard.writeText(textToCopy).catch(err => {
+            console.error('Failed to copy text: ', err);
+        });
+    };
+
     return (
         <div className={styles.pageWrapper}>
             <div className={styles.header}>
@@ -121,7 +132,7 @@ function ActionHistory({ isEsp32DataConnected }) {
                     <BsSearch className={styles.searchIcon} />
                     <input
                         type="text"
-                        placeholder="Search by ID or date/time"
+                        placeholder={searchPlaceholders[sortConfig.key] || 'Search...'}
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
                     />
@@ -141,8 +152,8 @@ function ActionHistory({ isEsp32DataConnected }) {
                 </select>
 
                 <select value={sortConfig.key} onChange={e => setSortConfig({ ...sortConfig, key: e.target.value })}>
+                    <option value="all">All</option>
                     <option value="created_at">Sort by Time</option>
-                    <option value="id">Sort by ID</option>
                 </select>
 
                 <select value={sortConfig.direction} onChange={e => setSortConfig({ ...sortConfig, direction: e.target.value })}>
@@ -162,18 +173,27 @@ function ActionHistory({ isEsp32DataConnected }) {
                         </tr>
                     </thead>
                     <tbody>
-                        {actions.length > 0 ? actions.map(record => (
-                            <tr key={record.id}>
-                                <td>{record.id}</td>
-                                <td>{record.device}</td>
-                                <td>
-                                    <span className={`${styles.actionBadge} ${record.action === 'ON' ? styles.on : styles.off}`}>
-                                        {record.action}
-                                    </span>
-                                </td>
-                                <td>{getFormattedDate(record.created_at)}</td>
-                            </tr>
-                        )) : (
+                        {actions.length > 0 ? actions.map(record => {
+                            const formattedDate = getFormattedDate(record.created_at);
+                            return (
+                                <tr key={record.id}>
+                                    <td>{record.id}</td>
+                                    <td>{record.device}</td>
+                                    <td>
+                                        <span className={`${styles.actionBadge} ${record.action === 'ON' ? styles.on : styles.off}`}>
+                                            {record.action}
+                                        </span>
+                                    </td>
+                                    <td
+                                        className={styles.timeCell}
+                                        onClick={() => handleCopyClick(formattedDate)}
+                                        title="Click to copy"
+                                    >
+                                        {formattedDate}
+                                    </td>
+                                </tr>
+                            );
+                        }) : (
                             <tr>
                                 <td colSpan="4" style={{ textAlign: 'center', padding: '20px', color: 'var(--secondary-text-color)' }}>
                                     No action history found.
