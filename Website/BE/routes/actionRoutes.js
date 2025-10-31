@@ -41,7 +41,7 @@ export default (db) => {
             const sortKey = req.query.sortKey || 'created_at';
             const sortDirection = req.query.sortDirection === 'ascending' ? 'ASC' : 'DESC';
 
-            const allowedSortKeys = ['all', 'created_at'];
+            const allowedSortKeys = ['created_at'];
             if (!allowedSortKeys.includes(sortKey)) {
                 return res.status(400).json({ error: 'Invalid sort key' });
             }
@@ -61,13 +61,8 @@ export default (db) => {
 
             if (search) {
                 const searchTerm = `%${search}%`;
-                if (sortKey === 'all') {
-                    filterConditions.push(`(CAST(id AS CHAR) LIKE ? OR DATE_FORMAT(created_at, '%d/%m/%Y, %H:%i:%s') LIKE ?)`);
-                    values.push(searchTerm, searchTerm);
-                } else {
-                    filterConditions.push(`DATE_FORMAT(created_at, '%d/%m/%Y, %H:%i:%s') LIKE ?`);
-                    values.push(searchTerm);
-                }
+                filterConditions.push(`DATE_FORMAT(created_at, '%d/%m/%Y, %H:%i:%s') LIKE ?`);
+                values.push(searchTerm);
             }
 
             const filterClause = filterConditions.length > 0 ? `WHERE ${filterConditions.join(' AND ')}` : '';
@@ -78,7 +73,7 @@ export default (db) => {
             const totalPages = Math.ceil(totalItems / limit);
 
             const finalSortKey = 'created_at';
-            const finalSortDirection = sortKey === 'all' ? 'DESC' : sortDirection;
+            const finalSortDirection = sortDirection;
 
             const dataSql = `
                 SELECT * FROM action_logs

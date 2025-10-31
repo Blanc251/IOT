@@ -24,10 +24,7 @@ function useDebounce(value, delay) {
     return debouncedValue;
 }
 
-const searchPlaceholders = {
-    all: 'Search by ID or Time',
-    created_at: 'Search by date/time (dd/mm/yyyy, hh:ii:ss)'
-};
+const searchPlaceholder = 'Search by date/time (dd/mm/yyyy, hh:ii:ss)';
 
 function ActionHistory({ isEsp32DataConnected }) {
     const [actions, setActions] = useState([]);
@@ -43,8 +40,8 @@ function ActionHistory({ isEsp32DataConnected }) {
     const [filterDevice, setFilterDevice] = useState(searchParams.get('device') || 'all');
     const [filterAction, setFilterAction] = useState(searchParams.get('action') || 'all');
     const [sortConfig, setSortConfig] = useState({
-        key: searchParams.get('sortKey') || 'created_at',
-        direction: searchParams.get('sortDirection') || 'descending'
+        key: 'created_at',
+        direction: 'descending'
     });
 
     const fetchActions = useCallback(async () => {
@@ -53,8 +50,8 @@ function ActionHistory({ isEsp32DataConnected }) {
             const search = searchParams.get('search') || '';
             const device = searchParams.get('device') || 'all';
             const action = searchParams.get('action') || 'all';
-            const sortKey = searchParams.get('sortKey') || 'created_at';
-            const sortDirection = searchParams.get('sortDirection') || 'descending';
+            const sortKey = sortConfig.key;
+            const sortDirection = sortConfig.direction;
 
             const response = await axios.get(`${API_URL}/actions/history`, {
                 params: {
@@ -82,7 +79,7 @@ function ActionHistory({ isEsp32DataConnected }) {
             setTotalItems(0);
             setItemsRange({ start: 0, end: 0 });
         }
-    }, [searchParams]);
+    }, [searchParams, sortConfig]);
 
     useEffect(() => {
         fetchActions();
@@ -132,7 +129,7 @@ function ActionHistory({ isEsp32DataConnected }) {
                     <BsSearch className={styles.searchIcon} />
                     <input
                         type="text"
-                        placeholder={searchPlaceholders[sortConfig.key] || 'Search...'}
+                        placeholder={searchPlaceholder}
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
                     />
@@ -149,16 +146,6 @@ function ActionHistory({ isEsp32DataConnected }) {
                     <option value="all">All Actions</option>
                     <option value="ON">ON</option>
                     <option value="OFF">OFF</option>
-                </select>
-
-                <select value={sortConfig.key} onChange={e => setSortConfig({ ...sortConfig, key: e.target.value })}>
-                    <option value="all">All</option>
-                    <option value="created_at">Sort by Time</option>
-                </select>
-
-                <select value={sortConfig.direction} onChange={e => setSortConfig({ ...sortConfig, direction: e.target.value })}>
-                    <option value="ascending">Ascending</option>
-                    <option value="descending">Descending</option>
                 </select>
             </div>
 
