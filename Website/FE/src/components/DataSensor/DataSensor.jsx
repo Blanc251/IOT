@@ -22,7 +22,7 @@ function useDebounce(value, delay) {
 }
 
 const API_URL = 'http://localhost:3001/api';
-const ITEMS_PER_PAGE = 13;
+const ITEMS_PER_PAGE = 16;
 
 function DataSensor({ isEsp32DataConnected }) {
     const [history, setHistory] = useState([]);
@@ -106,7 +106,7 @@ function DataSensor({ isEsp32DataConnected }) {
                 <h1>Data Sensor</h1>
             </div>
 
-            <div className={styles.controlsBar}>
+            <div className={styles.filterBar}>
                 <div className={styles.searchBar}>
                     <BsSearch className={styles.searchIcon} />
                     <input
@@ -116,19 +116,17 @@ function DataSensor({ isEsp32DataConnected }) {
                         onChange={e => setSearchTerm(e.target.value)}
                     />
                 </div>
-                <div className={styles.sortControls}>
-                    <select value={sortConfig.key} onChange={e => setSortConfig({ ...sortConfig, key: e.target.value })}>
-                        <option value="created_at">Sort by Time</option>
-                        <option value="id">Sort by ID</option>
-                        <option value="temperature">Sort by Temperature</option>
-                        <option value="humidity">Sort by Humidity</option>
-                        <option value="light">Sort by Light</option>
-                    </select>
-                    <select value={sortConfig.direction} onChange={e => setSortConfig({ ...sortConfig, direction: e.target.value })}>
-                        <option value="ascending">Ascending</option>
-                        <option value="descending">Descending</option>
-                    </select>
-                </div>
+                <select value={sortConfig.key} onChange={e => setSortConfig({ ...sortConfig, key: e.target.value })}>
+                    <option value="created_at">Sort by Time</option>
+                    <option value="id">Sort by ID</option>
+                    <option value="temperature">Sort by Temperature</option>
+                    <option value="humidity">Sort by Humidity</option>
+                    <option value="light">Sort by Light</option>
+                </select>
+                <select value={sortConfig.direction} onChange={e => setSortConfig({ ...sortConfig, direction: e.target.value })}>
+                    <option value="ascending">Ascending</option>
+                    <option value="descending">Descending</option>
+                </select>
             </div>
 
             <div className={styles.tableCard}>
@@ -149,7 +147,7 @@ function DataSensor({ isEsp32DataConnected }) {
                                 <td>{record.temperature}</td>
                                 <td>{record.humidity}</td>
                                 <td>{record.light}</td>
-                                Z<td>{getFormattedDate(record.created_at)}</td>
+                                <td>{getFormattedDate(record.created_at)}</td>
                             </tr>
                         )) : (
                             <tr>
@@ -162,7 +160,7 @@ function DataSensor({ isEsp32DataConnected }) {
                 </table>
             </div>
 
-            <div className={styles.paginationFooter}>
+            <div className={styles.footer}>
                 <span>
                     {totalItems > 0
                         ? `Displaying ${itemsRange.start}-${itemsRange.end} of ${totalItems} results`

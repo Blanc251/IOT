@@ -64,7 +64,7 @@ const dbConfig = {
     database: 'iot_dashboard',
 };
 
-const mqttBrokerUrl = 'mqtt://172.17.118.87:1883';
+const mqttBrokerUrl = 'mqtt://172.20.10.2:1883';
 const SENSOR_TOPIC = 'iot/sensor/data';
 const COMMAND_TOPIC = 'iot/led/control';
 const STATUS_TOPIC = 'iot/led/status';
@@ -154,6 +154,21 @@ async function startServer() {
                 isEsp32DataConnected = newConnectionState;
                 console.log(`ESP32 Connection status changed: ${status}`);
                 broadcastDataStatus();
+            }
+            if (newConnectionState) {
+                console.log('ESP32 is online. Sending last known LED status...');
+
+                Object.keys(currentLedStatus).forEach((led) => {
+                    const state = currentLedStatus[led];
+                    const command = `${led}${state}`;
+
+                    console.log(`Sending command to restore state: ${command}`);
+                    client.publish(COMMAND_TOPIC, command, (err) => {
+                        if (err) {
+                            console.error(`Failed to send restore command ${command}:`, err.message);
+                        }
+                    });
+                });
             }
         }
 

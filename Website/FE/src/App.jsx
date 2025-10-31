@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import axios from 'axios';
 
@@ -16,6 +16,9 @@ function App() {
   const [sensorData, setSensorData] = useState({ temperature: 0, humidity: 0, light: 0 });
   const [isEsp32DataConnected, setIsEsp32DataConnected] = useState(false);
   const [deviceLoading, setDeviceLoading] = useState({ led1: false, led2: false, led3: false });
+
+  const responseTimeoutRef = useRef(null);
+  const delayTimeoutRef = useRef(null);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -44,6 +47,10 @@ function App() {
           setSensorData(message.data);
           break;
         case 'LED_STATUS':
+          if (responseTimeoutRef.current) {
+            clearTimeout(responseTimeoutRef.current);
+            responseTimeoutRef.current = null;
+          }
           setLedStatus(message.data);
           setDeviceLoading({ led1: false, led2: false, led3: false });
           break;
@@ -53,29 +60,56 @@ function App() {
     };
 
     return () => {
+      if (responseTimeoutRef.current) {
+        clearTimeout(responseTimeoutRef.current);
+      }
+      if (delayTimeoutRef.current) {
+        clearTimeout(delayTimeoutRef.current);
+      }
       ws.close();
     };
   }, []);
 
   const sendCommand = async (command, ledName) => {
+    if (responseTimeoutRef.current) {
+      clearTimeout(responseTimeoutRef.current);
+    }
+    if (delayTimeoutRef.current) {
+      clearTimeout(delayTimeoutRef.current);
+    }
+
     if (ledName === 'all') {
       setDeviceLoading({ led1: true, led2: true, led3: true });
     } else if (ledName) {
       setDeviceLoading(prev => ({ ...prev, [ledName]: true }));
     }
 
-    await new Promise(resolve => setTimeout(resolve, 500));
+    delayTimeoutRef.current = setTimeout(async () => {
+      try {
+        await axios.post(`${API_URL}/command`, { command });
 
-    try {
-      await axios.post(`${API_URL}/command`, { command });
-    } catch (error) {
-      console.error(`Error sending command "${command}":`, error);
-      setDeviceLoading({ led1: false, led2: false, led3: false });
-      const response = await axios.get(`${API_URL}/data`);
-      if (response.data.leds) {
-        setLedStatus(response.data.leds);
+        responseTimeoutRef.current = setTimeout(() => {
+          console.warn(`Command "${command}" timed out (No WS response). Resetting spinners.`);
+          setDeviceLoading({ led1: false, led2: false, led3: false });
+          responseTimeoutRef.current = null;
+        }, 3000);
+
+      } catch (error) {
+        console.error(`Error sending command "${command}":`, error);
+
+        if (responseTimeoutRef.current) {
+          clearTimeout(responseTimeoutRef.current);
+          responseTimeoutRef.current = null;
+        }
+
+        setDeviceLoading({ led1: false, led2: false, led3: false });
+
+        const response = await axios.get(`${API_URL}/data`);
+        if (response.data.leds) {
+          setLedStatus(response.data.leds);
+        }
       }
-    }
+    }, 500);
   };
 
   return (

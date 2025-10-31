@@ -3,6 +3,7 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
+    gap: 20px;
 }
 
 .pageHeader h1 {
@@ -10,10 +11,14 @@
     font-weight: 600;
 }
 
-.pageSubtitle {
-    color: var(--secondary-text-color);
-    margin-top: 4px;
-    margin-bottom: 20px;
+.filterBar {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    padding: 16px;
+    border-radius: 12px;
+    background-color: var(--card-bg-color);
+    box-shadow: 0 4px 20px var(--shadow-color);
 }
 
 .searchBar {
@@ -32,11 +37,22 @@
 
 .searchBar input {
     width: 100%;
-    padding: 12px 15px 12px 40px;
+    padding: 10px 12px 10px 40px;
     border-radius: 8px;
     border: 1px solid var(--border-color);
-    font-size: 1rem;
-    background-color: var(--card-bg-color);
+    font-size: 0.95rem;
+    font-family: 'Poppins', sans-serif;
+    background-color: #fff;
+}
+
+.filterBar select {
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    font-size: 0.95rem;
+    font-family: 'Poppins', sans-serif;
+    background-color: #fff;
+    min-width: 150px;
 }
 
 .tableCard {
@@ -49,33 +65,27 @@
     min-height: 0;
 }
 
-.paginationFooter {
+.tableCard th,
+.tableCard td {
+    padding: 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.tableCard th {
+    font-weight: 500;
+    color: var(--secondary-text-color);
+}
+
+.tableCard tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-shrink: 0;
     color: var(--secondary-text-color);
-    padding-top: 20px;
-}
-
-.controlsBar {
-    display: flex;
-    gap: 16px;
-    margin-bottom: 20px;
-    align-items: stretch;
-}
-
-.sortControls {
-    display: flex;
-    gap: 10px;
-    flex-grow: 1;
-}
-
-.sortControls select {
-    flex: 1;
-    padding: 12px;
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
-    font-size: 1rem;
-    background-color: var(--card-bg-color);
+    padding: 10px 0;
 }
