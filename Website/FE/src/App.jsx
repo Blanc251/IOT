@@ -13,9 +13,10 @@ const API_URL = 'http://localhost:3001/api';
 
 function App() {
   const [ledStatus, setLedStatus] = useState({ led1: 'off', led2: 'off', led3: 'off' });
-  const [sensorData, setSensorData] = useState({ temperature: 0, humidity: 0, light: 0 });
   const [isEsp32DataConnected, setIsEsp32DataConnected] = useState(false);
+  const [sensorData, setSensorData] = useState({ temperature: 0, humidity: 0, light: 0, dust_sensor: 0, co2_sensor: 0 });
   const [deviceLoading, setDeviceLoading] = useState({ led1: false, led2: false, led3: false });
+  const [isAlarmOn, setIsAlarmOn] = useState(false);
 
   const responseTimeoutRef = useRef(null);
   const delayTimeoutRef = useRef(null);
@@ -54,6 +55,9 @@ function App() {
           setLedStatus(message.data);
           setDeviceLoading({ led1: false, led2: false, led3: false });
           break;
+        case 'ALARM_STATUS':
+          setIsAlarmOn(message.isAlarmOn);
+          break;
         default:
           break;
       }
@@ -70,7 +74,7 @@ function App() {
     };
   }, []);
 
-  const sendCommand = async (command, ledName) => {
+  const sendCommand = async (command, ledName, newState) => {
     if (responseTimeoutRef.current) {
       clearTimeout(responseTimeoutRef.current);
     }
@@ -103,13 +107,8 @@ function App() {
         }
 
         setDeviceLoading({ led1: false, led2: false, led3: false });
-
-        const response = await axios.get(`${API_URL}/data`);
-        if (response.data.leds) {
-          setLedStatus(response.data.leds);
-        }
       }
-    }, 500);
+    }, 1000);
   };
 
   return (
@@ -117,7 +116,17 @@ function App() {
       <Sidebar />
       <main className="main-content">
         <Routes>
-          <Route path="/" element={<Dashboard sensorData={sensorData} ledStatus={ledStatus} sendCommand={sendCommand} isEsp32DataConnected={isEsp32DataConnected} deviceLoading={deviceLoading} />} />
+          <Route
+            path="/"
+            element={<Dashboard
+              sensorData={sensorData}
+              ledStatus={ledStatus}
+              sendCommand={sendCommand}
+              isEsp32DataConnected={isEsp32DataConnected}
+              deviceLoading={deviceLoading}
+              isAlarmOn={isAlarmOn}
+            />}
+          />
           <Route path="/data-sensor" element={<DataSensor isEsp32DataConnected={isEsp32DataConnected} />} />
           <Route path="/action-history" element={<ActionHistory isEsp32DataConnected={isEsp32DataConnected} />} />
           <Route path="/profile" element={<Profile />} />

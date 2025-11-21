@@ -22,14 +22,16 @@ function useDebounce(value, delay) {
 }
 
 const API_URL = 'http://localhost:3001/api';
-const ITEMS_PER_PAGE = 16;
+const ITEMS_PER_PAGE = 9; // Đã thay đổi từ 10 thành 9
 
 const searchPlaceholders = {
     all: 'Search by ID, Temp, Humidity, Light, or Time',
     created_at: 'Search by date/time (dd/mm/yyyy, hh:ii:ss)',
     temperature: 'Search by Temperature',
     humidity: 'Search by Humidity',
-    light: 'Search by Light'
+    light: 'Search by Light',
+    dust_sensor: 'Search by Dust Sensor',
+    co2_sensor: 'Search by CO2 Sensor'
 };
 
 function DataSensor({ isEsp32DataConnected }) {
@@ -58,6 +60,7 @@ function DataSensor({ isEsp32DataConnected }) {
             const response = await axios.get(`${API_URL}/data/history`, {
                 params: {
                     page: page,
+                    limit: ITEMS_PER_PAGE,
                     search: search,
                     sortKey: sortKey,
                     sortDirection: sortDirection,
@@ -136,6 +139,8 @@ function DataSensor({ isEsp32DataConnected }) {
                     <option value="temperature">Sort by Temperature</option>
                     <option value="humidity">Sort by Humidity</option>
                     <option value="light">Sort by Light</option>
+                    <option value="dust_sensor">Sort by Dust Sensor</option>
+                    <option value="co2_sensor">Sort by CO2 Sensor</option>
                 </select>
                 <select value={sortConfig.direction} onChange={e => setSortConfig({ ...sortConfig, direction: e.target.value })}>
                     <option value="ascending">Ascending</option>
@@ -151,6 +156,8 @@ function DataSensor({ isEsp32DataConnected }) {
                             <th>Temperature (°C)</th>
                             <th>Humidity (%)</th>
                             <th>Light (nits)</th>
+                            <th>Dust Sensor</th>
+                            <th>CO2 Sensor</th>
                             <th>Time</th>
                         </tr>
                     </thead>
@@ -163,6 +170,8 @@ function DataSensor({ isEsp32DataConnected }) {
                                     <td>{record.temperature}</td>
                                     <td>{record.humidity}</td>
                                     <td>{record.light}</td>
+                                    <td>{record.dust_sensor}</td>
+                                    <td>{record.co2_sensor}</td>
                                     <td
                                         className={styles.timeCell}
                                         onClick={() => handleCopyClick(formattedDate)}
@@ -174,7 +183,7 @@ function DataSensor({ isEsp32DataConnected }) {
                             );
                         }) : (
                             <tr>
-                                <td colSpan="5" style={{ textAlign: 'center', padding: '20px', color: 'var(--secondary-text-color)' }}>
+                                <td colSpan="7" style={{ textAlign: 'center', padding: '20px', color: 'var(--secondary-text-color)' }}>
                                     {isEsp32DataConnected ? 'No data found' : 'No data found (device may be disconnected)'}
                                 </td>
                             </tr>

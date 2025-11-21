@@ -6,7 +6,7 @@ import { BsSearch } from 'react-icons/bs';
 import styles from './ActionHistory.module.css';
 
 const API_URL = 'http://localhost:3001/api';
-const ITEMS_PER_PAGE = 15;
+const ITEMS_PER_PAGE = 9; // Đã thay đổi từ 10 thành 9
 
 function useDebounce(value, delay) {
     const [debouncedValue, setDebouncedValue] = useState(value);
@@ -56,6 +56,7 @@ function ActionHistory({ isEsp32DataConnected }) {
             const response = await axios.get(`${API_URL}/actions/history`, {
                 params: {
                     page: page,
+                    limit: ITEMS_PER_PAGE,
                     search: search,
                     device: device,
                     action: action,

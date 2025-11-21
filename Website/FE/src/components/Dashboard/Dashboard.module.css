@@ -13,14 +13,14 @@
 
 .summaryCardsContainer {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: var(--main-spacing);
     flex-shrink: 0;
 }
 
 .chartsContainer {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: var(--main-spacing);
     flex-grow: 1;
     min-height: 0;

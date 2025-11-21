@@ -69,14 +69,14 @@ export default (db, currentLedStatus) => {
     router.get('/history', async (req, res) => {
         try {
             const page = parseInt(req.query.page) || 1;
-            const limit = 15;
+            const limit = parseInt(req.query.limit) || 15;
             const offset = (page - 1) * limit;
             const search = req.query.search || '';
 
             const sortKey = req.query.sortKey || 'created_at';
             const sortDirection = req.query.sortDirection === 'ascending' ? 'ASC' : 'DESC';
 
-            const allowedSortKeys = ['all', 'temperature', 'humidity', 'light', 'created_at'];
+            const allowedSortKeys = ['all', 'temperature', 'humidity', 'light', 'created_at', 'dust_sensor', 'co2_sensor'];
             if (!allowedSortKeys.includes(sortKey)) {
                 return res.status(400).json({ error: 'Invalid sort key' });
             }
@@ -93,9 +93,11 @@ export default (db, currentLedStatus) => {
                             CAST(temperature AS CHAR) LIKE ? OR
                             CAST(humidity AS CHAR) LIKE ? OR
                             CAST(light AS CHAR) LIKE ? OR
+                            CAST(dust_sensor AS CHAR) LIKE ? OR
+                            CAST(co2_sensor AS CHAR) LIKE ? OR
                             DATE_FORMAT(created_at, '%d/%m/%Y, %H:%i:%s') LIKE ?
                         )`);
-                        values.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
+                        values.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
                         break;
                     case 'temperature':
                         filterConditions.push('CAST(temperature AS CHAR) LIKE ?');
@@ -107,6 +109,14 @@ export default (db, currentLedStatus) => {
                         break;
                     case 'light':
                         filterConditions.push('CAST(light AS CHAR) LIKE ?');
+                        values.push(searchTerm);
+                        break;
+                    case 'dust_sensor':
+                        filterConditions.push('CAST(dust_sensor AS CHAR) LIKE ?');
+                        values.push(searchTerm);
+                        break;
+                    case 'co2_sensor':
+                        filterConditions.push('CAST(co2_sensor AS CHAR) LIKE ?');
                         values.push(searchTerm);
                         break;
                     case 'created_at':

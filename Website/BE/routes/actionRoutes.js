@@ -31,7 +31,7 @@ export default (db) => {
     router.get('/history', async (req, res) => {
         try {
             const page = parseInt(req.query.page) || 1;
-            const limit = 15;
+            const limit = parseInt(req.query.limit) || 15;
             const offset = (page - 1) * limit;
 
             const search = req.query.search || '';

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import SummaryCard from '../SummaryCard/SummaryCard';
 import DeviceControls from '../DeviceControl/DeviceControls';
 
@@ -84,13 +84,64 @@ const chartOptions = {
     },
 };
 
-function Dashboard({ sensorData, ledStatus, sendCommand, isEsp32DataConnected, deviceLoading }) {
+const initialDustChartData = {
+    labels: [],
+    datasets: [
+        {
+            label: 'Dust Sensor (0-1000)',
+            data: [],
+            borderColor: 'rgba(153, 102, 255, 1)',
+            backgroundColor: 'rgba(153, 102, 255, 0.2)',
+            tension: 0.4,
+            fill: true,
+            yAxisID: 'y',
+        },
+        {
+            label: 'CO2 Sensor (0-100)',
+            data: [],
+            borderColor: 'rgba(255, 159, 64, 1)',
+            backgroundColor: 'rgba(255, 159, 64, 0.2)',
+            tension: 0.4,
+            fill: true,
+            yAxisID: 'y1',
+        },
+    ],
+};
+
+const chartOptionsDust = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { position: 'top' } },
+    scales: {
+        y: {
+            type: 'linear',
+            display: true,
+            position: 'left',
+            beginAtZero: true,
+            max: 1000
+        },
+        y1: {
+            type: 'linear',
+            display: true,
+            position: 'right',
+            beginAtZero: true,
+            max: 100,
+            grid: {
+                drawOnChartArea: false,
+            },
+        },
+    },
+};
+
+
+function Dashboard({ sensorData, ledStatus, sendCommand, isEsp32DataConnected, deviceLoading, isAlarmOn }) {
     const [chartData, setChartData] = useState(initialChartData);
+    const [chartDataDust, setChartDataDust] = useState(initialDustChartData);
 
     useEffect(() => {
         if (!sensorData || typeof sensorData.temperature === 'undefined') return;
 
-        const { temperature, humidity, light } = sensorData;
+        const { temperature, humidity, light, dust_sensor, co2_sensor } = sensorData;
         const newLabel = new Date().toLocaleTimeString();
 
         setChartData(prevData => {
@@ -108,6 +159,21 @@ function Dashboard({ sensorData, ledStatus, sendCommand, isEsp32DataConnected, d
                 ]
             };
         });
+
+        setChartDataDust(prevData => {
+            const labels = [...prevData.labels, newLabel].slice(-10);
+            const newDust1Data = [...prevData.datasets[0].data, dust_sensor].slice(-10);
+            const newDust2Data = [...prevData.datasets[1].data, co2_sensor].slice(-10);
+            return {
+                ...prevData,
+                labels,
+                datasets: [
+                    { ...prevData.datasets[0], data: newDust1Data },
+                    { ...prevData.datasets[1], data: newDust2Data },
+                ]
+            };
+        });
+
     }, [sensorData]);
 
     return (
@@ -141,6 +207,20 @@ function Dashboard({ sensorData, ledStatus, sendCommand, isEsp32DataConnected, d
                     status="Bright"
                     statusType="bright"
                 />
+                <SummaryCard
+                    title="Dust Sensor"
+                    value={sensorData?.dust_sensor || 0}
+                    unit=""
+                    status={sensorData?.dust_sensor > 500 ? "High" : "Normal"}
+                    statusType={sensorData?.dust_sensor > 500 ? "high" : "normal"}
+                />
+                <SummaryCard
+                    title="CO2 Sensor"
+                    value={sensorData?.co2_sensor || 0}
+                    unit=""
+                    status={sensorData?.co2_sensor > 50 ? "High" : "Normal"}
+                    statusType={sensorData?.co2_sensor > 50 ? "high" : "normal"}
+                />
             </div>
 
             <div className={styles.chartsContainer}>
@@ -150,6 +230,13 @@ function Dashboard({ sensorData, ledStatus, sendCommand, isEsp32DataConnected, d
                         <Line options={chartOptions} data={chartData} />
                     </div>
                 </div>
+
+                <div className={styles.chartCard}>
+                    <h3>Dust & CO2 Sensors</h3>
+                    <div className={styles.chartWrapper}>
+                        <Line options={chartOptionsDust} data={chartDataDust} />
+                    </div>
+                </div>
             </div>
 
             <DeviceControls
@@ -157,6 +244,7 @@ function Dashboard({ sensorData, ledStatus, sendCommand, isEsp32DataConnected, d
                 sendCommand={sendCommand}
                 isEsp32DataConnected={isEsp32DataConnected}
                 deviceLoading={deviceLoading}
+                isAlarmOn={isAlarmOn}
             />
         </div>
     );

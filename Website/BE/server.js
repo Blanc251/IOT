@@ -21,7 +21,8 @@ const wss = new WebSocketServer({ server });
 let isMqttConnected = false;
 let isEsp32DataConnected = false;
 let currentLedStatus = { led1: 'off', led2: 'off', led3: 'off' };
-let currentSensorData = {};
+let currentSensorData = { temperature: 0, humidity: 0, light: 0, dust_sensor: 0, co2_sensor: 0 };
+let isAlarmOn = false;
 
 function broadcastToAll(message) {
     wss.clients.forEach((client) => {
@@ -47,11 +48,16 @@ function broadcastLedStatus(status) {
     broadcastToAll({ type: 'LED_STATUS', data: status });
 }
 
+function broadcastAlarmStatus(isAlarmOn) {
+    broadcastToAll({ type: 'ALARM_STATUS', isAlarmOn });
+}
+
 wss.on('connection', (ws) => {
     ws.send(JSON.stringify({ type: 'MQTT_STATUS', isConnected: isMqttConnected }));
     ws.send(JSON.stringify({ type: 'DATA_STATUS', isConnected: isEsp32DataConnected }));
     ws.send(JSON.stringify({ type: 'LED_STATUS', data: currentLedStatus }));
     ws.send(JSON.stringify({ type: 'SENSOR_DATA', data: currentSensorData }));
+    ws.send(JSON.stringify({ type: 'ALARM_STATUS', isAlarmOn: isAlarmOn }));
 });
 
 app.use(cors());
@@ -177,10 +183,44 @@ async function startServer() {
             currentSensorData = data;
             broadcastSensorData(data);
             try {
-                const sql = 'INSERT INTO sensor_readings (temperature, humidity, light) VALUES (?, ?, ?)';
-                await db.query(sql, [data.temperature, data.humidity, data.light]);
+                const sql = 'INSERT INTO sensor_readings (temperature, humidity, light, dust_sensor, co2_sensor) VALUES (?, ?, ?, ?, ?)';
+                await db.query(sql, [data.temperature, data.humidity, data.light, data.dust_sensor, data.co2_sensor]);
             } catch (error) {
                 console.error('Failed to save sensor data:', error.message);
+            }
+
+            const alarmCondition = (data.dust_sensor > 500 && data.co2_sensor > 50);
+
+            if (alarmCondition && !isAlarmOn) {
+                isAlarmOn = true;
+                broadcastAlarmStatus(isAlarmOn);
+                client.publish('iot/alarm/control', 'on', async (err) => {
+                    if (err) {
+                        console.error('MQTT publish error (ALARM ON):', err.message);
+                    } else {
+                        console.log('ALARM TRIGGERED: ON');
+                        try {
+                            await db.query('INSERT INTO action_logs (device, action) VALUES (?, ?)', ['ALARM_LED', 'ON']);
+                        } catch (logError) {
+                            console.error('Failed to log alarm action:', logError.message);
+                        }
+                    }
+                });
+            } else if (!alarmCondition && isAlarmOn) {
+                isAlarmOn = false;
+                broadcastAlarmStatus(isAlarmOn);
+                client.publish('iot/alarm/control', 'off', async (err) => {
+                    if (err) {
+                        console.error('MQTT publish error (ALARM OFF):', err.message);
+                    } else {
+                        console.log('ALARM RESET: OFF');
+                        try {
+                            await db.query('INSERT INTO action_logs (device, action) VALUES (?, ?)', ['ALARM_LED', 'OFF']);
+                        } catch (logError) {
+                            console.error('Failed to log alarm action:', logError.message);
+                        }
+                    }
+                });
             }
         }
 
