@@ -6,7 +6,7 @@ import { BsSearch } from 'react-icons/bs';
 import styles from './ActionHistory.module.css';
 
 const API_URL = 'http://localhost:3001/api';
-const ITEMS_PER_PAGE = 9; // Đã thay đổi từ 10 thành 9
+const ITEMS_PER_PAGE = 9;
 
 function useDebounce(value, delay) {
     const [debouncedValue, setDebouncedValue] = useState(value);

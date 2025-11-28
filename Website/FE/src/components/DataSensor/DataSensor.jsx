@@ -22,16 +22,16 @@ function useDebounce(value, delay) {
 }
 
 const API_URL = 'http://localhost:3001/api';
-const ITEMS_PER_PAGE = 9; // Đã thay đổi từ 10 thành 9
+const ITEMS_PER_PAGE = 9;
 
 const searchPlaceholders = {
-    all: 'Search by ID, Temp, Humidity, Light, or Time',
-    created_at: 'Search by date/time (dd/mm/yyyy, hh:ii:ss)',
-    temperature: 'Search by Temperature',
-    humidity: 'Search by Humidity',
-    light: 'Search by Light',
-    dust_sensor: 'Search by Dust Sensor',
-    co2_sensor: 'Search by CO2 Sensor'
+    all: 'Search all columns...',
+    created_at: 'Search by date (dd/mm/yyyy...)',
+    temperature: 'Search temperature...',
+    humidity: 'Search humidity...',
+    light: 'Search light...',
+    dust_sensor: 'Search dust...',
+    co2_sensor: 'Search CO2...'
 };
 
 function DataSensor({ isEsp32DataConnected }) {
@@ -45,6 +45,9 @@ function DataSensor({ isEsp32DataConnected }) {
 
     const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
     const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
+    const [searchField, setSearchField] = useState(searchParams.get('searchField') || 'all');
+
     const [sortConfig, setSortConfig] = useState({
         key: searchParams.get('sortKey') || 'created_at',
         direction: searchParams.get('sortDirection') || 'descending'
@@ -54,6 +57,7 @@ function DataSensor({ isEsp32DataConnected }) {
         try {
             const page = parseInt(searchParams.get('page') || '1', 10);
             const search = searchParams.get('search') || '';
+            const field = searchParams.get('searchField') || 'all';
             const sortKey = searchParams.get('sortKey') || 'created_at';
             const sortDirection = searchParams.get('sortDirection') || 'descending';
 
@@ -62,6 +66,7 @@ function DataSensor({ isEsp32DataConnected }) {
                     page: page,
                     limit: ITEMS_PER_PAGE,
                     search: search,
+                    searchField: field,
                     sortKey: sortKey,
                     sortDirection: sortDirection,
                 }
@@ -73,7 +78,7 @@ function DataSensor({ isEsp32DataConnected }) {
 
             const start = (page - 1) * ITEMS_PER_PAGE + 1;
             const end = start + data.length - 1;
-            setItemsRange({ start, end });
+            setItemsRange({ start, end: end < start ? start : end });
         } catch (error) {
             console.error('Error fetching historical data:', error);
             setHistory([]);
@@ -91,6 +96,7 @@ function DataSensor({ isEsp32DataConnected }) {
         const newSearchParams = new URLSearchParams(searchParams);
 
         newSearchParams.set('search', searchTerm.trim());
+        newSearchParams.set('searchField', searchField);
         newSearchParams.set('sortKey', sortConfig.key);
         newSearchParams.set('sortDirection', sortConfig.direction);
 
@@ -99,7 +105,7 @@ function DataSensor({ isEsp32DataConnected }) {
         }
 
         setSearchParams(newSearchParams, { replace: true });
-    }, [debouncedSearchTerm, sortConfig]);
+    }, [debouncedSearchTerm, searchField, sortConfig]);
 
     const handlePageChange = (newPage) => {
         const newSearchParams = new URLSearchParams(searchParams);
@@ -124,17 +130,31 @@ function DataSensor({ isEsp32DataConnected }) {
             </div>
 
             <div className={styles.filterBar}>
+                <select
+                    value={searchField}
+                    onChange={e => setSearchField(e.target.value)}
+                    style={{ minWidth: '160px' }}
+                >
+                    <option value="all">Search All</option>
+                    <option value="temperature">Temperature</option>
+                    <option value="humidity">Humidity</option>
+                    <option value="light">Light</option>
+                    <option value="dust_sensor">Dust Sensor</option>
+                    <option value="co2_sensor">CO2 Sensor</option>
+                    <option value="created_at">Time</option>
+                </select>
+
                 <div className={styles.searchBar}>
                     <BsSearch className={styles.searchIcon} />
                     <input
                         type="text"
-                        placeholder={searchPlaceholders[sortConfig.key] || 'Search...'}
+                        placeholder={searchPlaceholders[searchField] || 'Search...'}
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
                     />
                 </div>
+
                 <select value={sortConfig.key} onChange={e => setSortConfig({ ...sortConfig, key: e.target.value })}>
-                    <option value="all">All</option>
                     <option value="created_at">Sort by Time</option>
                     <option value="temperature">Sort by Temperature</option>
                     <option value="humidity">Sort by Humidity</option>
@@ -142,6 +162,7 @@ function DataSensor({ isEsp32DataConnected }) {
                     <option value="dust_sensor">Sort by Dust Sensor</option>
                     <option value="co2_sensor">Sort by CO2 Sensor</option>
                 </select>
+
                 <select value={sortConfig.direction} onChange={e => setSortConfig({ ...sortConfig, direction: e.target.value })}>
                     <option value="ascending">Ascending</option>
                     <option value="descending">Descending</option>

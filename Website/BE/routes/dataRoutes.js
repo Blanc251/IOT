@@ -73,20 +73,19 @@ export default (db, currentLedStatus) => {
             const offset = (page - 1) * limit;
             const search = req.query.search || '';
 
+            const searchField = req.query.searchField || 'all';
             const sortKey = req.query.sortKey || 'created_at';
             const sortDirection = req.query.sortDirection === 'ascending' ? 'ASC' : 'DESC';
 
-            const allowedSortKeys = ['all', 'temperature', 'humidity', 'light', 'created_at', 'dust_sensor', 'co2_sensor'];
-            if (!allowedSortKeys.includes(sortKey)) {
-                return res.status(400).json({ error: 'Invalid sort key' });
-            }
+            const allowedSortKeys = ['id', 'temperature', 'humidity', 'light', 'created_at', 'dust_sensor', 'co2_sensor'];
+            const finalSortKey = allowedSortKeys.includes(sortKey) ? sortKey : 'created_at';
 
             let filterConditions = [];
             let values = [];
 
             if (search) {
                 const searchTerm = `%${search}%`;
-                switch (sortKey) {
+                switch (searchField) {
                     case 'all':
                         filterConditions.push(`(
                             CAST(id AS CHAR) LIKE ? OR
@@ -135,13 +134,10 @@ export default (db, currentLedStatus) => {
 
             const totalPages = Math.ceil(totalItems / limit);
 
-            const finalSortKey = sortKey === 'all' ? 'created_at' : sortKey;
-            const finalSortDirection = sortKey === 'all' ? 'DESC' : sortDirection;
-
             const dataSql = `
                 SELECT * FROM sensor_readings
                 ${filterClause}
-                ORDER BY ${finalSortKey} ${finalSortDirection}
+                ORDER BY ${finalSortKey} ${sortDirection}
                 LIMIT ? OFFSET ?
             `;
 
