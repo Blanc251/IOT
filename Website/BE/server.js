@@ -190,7 +190,6 @@ async function startServer() {
             }
 
             const alarmCondition = (data.dust_sensor > 500 && data.co2_sensor > 50);
-
             if (alarmCondition && !isAlarmOn) {
                 isAlarmOn = true;
                 broadcastAlarmStatus(isAlarmOn);
